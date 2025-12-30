@@ -1,0 +1,61 @@
+use crate::core::pokemon::stat_enum::StatEnum;
+
+pub enum Nature {
+    Adamant,
+    Bashful,
+    Bold,
+    Brave,
+    Calm,
+    Careful,
+    Docile,
+    Gentle,
+    Hardy,
+    Hasty,
+    Impish,
+    Jolly,
+    Lax,
+    Lonely,
+    Mild,
+    Modest,
+    Naive,
+    Naughty,
+    Quiet,
+    Quirky,
+    Rash,
+    Relaxed,
+    Sassy,
+    Serious,
+    Timid,
+}
+
+impl Nature {
+    pub fn get_changed_stats(&self) -> (StatEnum, StatEnum) {
+        match self {
+            Nature::Adamant => (StatEnum::Attack, StatEnum::SpecialAttack),
+            Nature::Bashful => (StatEnum::SpecialAttack, StatEnum::SpecialAttack),
+            Nature::Bold => (StatEnum::Defense, StatEnum::Attack),
+            Nature::Brave => (StatEnum::Attack, StatEnum::Speed),
+            Nature::Calm => (StatEnum::SpecialDefense, StatEnum::Attack),
+            Nature::Careful => (StatEnum::SpecialDefense, StatEnum::SpecialAttack),
+            Nature::Docile => (StatEnum::Defense, StatEnum::Defense),
+            Nature::Gentle => (StatEnum::SpecialDefense, StatEnum::Defense),
+            Nature::Hardy => (StatEnum::Attack, StatEnum::Attack),
+            Nature::Hasty => (StatEnum::Speed, StatEnum::Defense),
+            Nature::Impish => (StatEnum::Defense, StatEnum::SpecialAttack),
+            Nature::Jolly => (StatEnum::Speed, StatEnum::SpecialAttack),
+            Nature::Lax => (StatEnum::Defense, StatEnum::SpecialDefense),
+            Nature::Lonely => (StatEnum::Attack, StatEnum::Defense),
+            Nature::Mild => (StatEnum::SpecialAttack, StatEnum::Defense),
+            Nature::Modest => (StatEnum::SpecialAttack, StatEnum::Attack),
+            Nature::Naive => (StatEnum::Speed, StatEnum::SpecialDefense),
+            Nature::Naughty => (StatEnum::Attack, StatEnum::SpecialDefense),
+            Nature::Quiet => (StatEnum::SpecialAttack, StatEnum::Speed),
+            Nature::Quirky => (StatEnum::SpecialDefense, StatEnum::SpecialDefense),
+            Nature::Rash => (StatEnum::SpecialAttack, StatEnum::SpecialDefense),
+            Nature::Relaxed => (StatEnum::Defense, StatEnum::Speed),
+            Nature::Sassy => (StatEnum::SpecialDefense, StatEnum::Speed),
+            Nature::Serious => (StatEnum::Speed, StatEnum::Speed),
+            Nature::Timid => (StatEnum::Speed, StatEnum::Attack),
+        }
+    }
+}
