@@ -1,4 +1,4 @@
-use crate::{core::pokemove::move_name::MoveName, event::payload::PayloadEvent};
+use crate::{common::has_kind::HasKind, core::pokemove::move_name::MoveName};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
 pub enum EventKind {
@@ -26,97 +26,22 @@ pub enum EventType {
     Damage(DamageEvent),
     Switch(SwitchEvent),
     BeginTurn,
-    OnBasePower(PayloadEvent),
-    OnAtk(PayloadEvent),
-    OnDef(PayloadEvent),
-    OnMod1(PayloadEvent),
-    OnMod2(PayloadEvent),
-    OnMod3(PayloadEvent),
-    IsCrit(PayloadEvent),
-    CritMult(PayloadEvent),
-    StabMult(PayloadEvent),
-    OnPriority(OnPriorityEvent),
-    BeforeMove(BeforeMoveEvent),
-    GetDeductPP(GetDeductPPEvent),
-    CheckInvulnerability(CanApplyMoveEvent),
-    CheckImmunity(CanApplyMoveEvent),
-    TryHit(CanApplyMoveEvent),
 }
 
-impl EventType {
-    pub fn kind(&self) -> EventKind {
+impl HasKind for EventType {
+    type Kind = EventKind;
+
+    fn kind(&self) -> EventKind {
         match self {
             EventType::Damage(_) => EventKind::Damage,
             EventType::Switch(_) => EventKind::Switch,
             EventType::BeginTurn => EventKind::BeginTurn,
-            EventType::OnBasePower(_) => EventKind::OnBasePower,
-            EventType::OnAtk(_) => EventKind::OnAtk,
-            EventType::OnDef(_) => EventKind::OnDef,
-            EventType::OnMod1(_) => EventKind::OnMod1,
-            EventType::OnMod2(_) => EventKind::OnMod2,
-            EventType::OnMod3(_) => EventKind::OnMod3,
-            EventType::IsCrit(_) => EventKind::IsCrit,
-            EventType::CritMult(_) => EventKind::CritMult,
-            EventType::StabMult(_) => EventKind::StabMult,
-            EventType::OnPriority(_) => EventKind::OnPriority,
-            EventType::BeforeMove(_) => EventKind::BeforeMove,
-            EventType::GetDeductPP(_) => EventKind::GetDeductPP,
-            EventType::CheckInvulnerability(_) => EventKind::CheckInvulnerability,
-            EventType::CheckImmunity(_) => EventKind::CheckImmunity,
-            EventType::TryHit(_) => EventKind::TryHit,
         }
     }
+}
 
-    pub fn into_damage_event(self) -> DamageEvent {
-        match self {
-            EventType::Damage(e) => e,
-            _ => panic!("Expected Damage event"),
-        }
-    }
+impl EventType {
 
-    pub fn into_on_priority(self) -> OnPriorityEvent {
-        match self {
-            EventType::OnPriority(e) => e,
-            _ => panic!("Expected OnPriority event"),
-        }
-    }
-
-    pub fn into_before_move(self) -> BeforeMoveEvent {
-        match self {
-            EventType::BeforeMove(e) => e,
-            _ => panic!("Expected BeforeMove event"),
-        }
-    }
-
-    pub fn into_get_deduct_pp(self) -> GetDeductPPEvent {
-        match self {
-            EventType::GetDeductPP(e) => e,
-            _ => panic!("Expected DeductPP event"),
-        }
-    }
-
-    pub fn into_can_apply_move(self) -> CanApplyMoveEvent {
-        match self {
-            EventType::CheckInvulnerability(e) => e,
-            EventType::CheckImmunity(e) => e,
-            EventType::TryHit(e) => e,
-            _ => panic!("Expected CanApplyMove event"),
-        }
-    }
-
-    pub fn into_payload_event(self) -> PayloadEvent {
-        match self {
-            EventType::OnBasePower(e) => e,
-            EventType::OnAtk(e) => e,
-            EventType::OnDef(e) => e,
-            EventType::OnMod1(e) => e,
-            EventType::OnMod2(e) => e,
-            EventType::OnMod3(e) => e,
-            EventType::IsCrit(e) => e,
-            EventType::CritMult(e) => e,
-            _ => panic!("Expected Payload event"),
-        }
-    }
 }
 
 

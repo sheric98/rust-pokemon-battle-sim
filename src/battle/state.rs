@@ -93,11 +93,11 @@ impl SingleSideState {
     // Returns true if the active Pokemon fainted
     pub fn take_damage(&mut self, damage: u32) -> bool {
         let active_pokemon = self.get_active_pokemon_mut();
-        if damage >= active_pokemon.hp {
+        if damage >= active_pokemon.hp as u32 {
             active_pokemon.hp = 0;
             true
         } else {
-            active_pokemon.hp -= damage;
+            active_pokemon.hp -= damage as u16;
             false
         }
     }

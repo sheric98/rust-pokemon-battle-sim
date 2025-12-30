@@ -102,12 +102,12 @@ impl Payload {
 }
 
 
-pub struct PayloadEvent {
+pub struct PayloadQuery {
     pub trainer_1: bool,
     pub payload: Payload,
 }
 
-impl PayloadEvent {
+impl PayloadQuery {
     pub fn new(trainer_1: bool, payload: Payload) -> Self {
         Self { trainer_1, payload }
     }
