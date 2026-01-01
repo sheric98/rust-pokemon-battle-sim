@@ -1,5 +1,5 @@
 use super::actions::Action;
-use crate::{battle::{battle_engine::BattleEngine, state::BattleState}, core::{pokemon::pokemon::Pokemon, pokemove::move_name::MoveName, poketype::{effectiveness, poketype::PokeType}, util::damage_utils}, dex::move_dex, event::{event_bus::EventBus, event_queue::EventQueue, event_type::{BeforeMoveEvent, CanApplyMoveEvent, DamageEvent, Event, OnPriorityEvent}}, query::{payload::PayloadQuery, query::Query, query_bus::QueryBus}};
+use crate::{battle::{battle_engine::BattleEngine, state::BattleState}, core::{pokemon::pokemon::Pokemon, pokemove::{move_name::MoveName, move_target::MoveTarget}, poketype::{effectiveness, poketype::PokeType}, util::damage_utils}, dex::pokemove::move_dex, event::{event_bus::EventBus, event_queue::EventQueue, event_type::{BeforeMoveEvent, CanApplyMoveEvent, DamageEvent, Event, OnPriorityEvent}}, query::{payload::{MoveQueryContext, PayloadMoveQuery}, query::Query, query_bus::QueryBus}};
 
 
 pub struct BattleSimulator {
@@ -38,8 +38,9 @@ impl BattleSimulator {
             return;
         } else {
             let move_name = self.battle_state.get_move_for_move_action(is_trainer_1, &action);
+            let move_context = BattleSimulator::create_move_context(move_name, is_trainer_1);
             
-            BattleEngine::try_use_move(&mut self.battle_state, &self.query_bus, is_trainer_1, move_name);
+            BattleEngine::try_use_move(&mut self.battle_state, &self.query_bus, &move_context);
         }
     }
 
@@ -75,10 +76,24 @@ impl BattleSimulator {
         if action.is_switch() {
             6
         } else {
-            let pokemove = optional_move.expect("Expected a move for non-switch action");
-            let priority_query = Query::OnPriority(PayloadQuery::i8(is_trainer_1));
-            self.query_bus.query(&priority_query, &mut self.battle_state);
-            priority_query.into_payload_query().get_i8()
+            let move_name = optional_move.expect("Expected a move for non-switch action");
+            let context = BattleSimulator::create_move_context(move_name, is_trainer_1);
+            let mut priority_query = Query::OnPriority(PayloadMoveQuery::i8(context));
+            self.query_bus.query(&mut priority_query, &mut self.battle_state);
+            priority_query.into_payload_move_query().get_i8()
+        }
+    }
+
+    fn create_move_context(move_name: MoveName, is_trainer_1: bool) -> MoveQueryContext {
+        let pokemove = move_dex::get_move_data(&move_name);
+        MoveQueryContext {
+            src_trainer: is_trainer_1,
+            target_trainer: match pokemove.target {
+                MoveTarget::Opponent => !is_trainer_1,
+                MoveTarget::User => is_trainer_1,
+            },
+            move_name,
+            pokemove,
         }
     }
 }

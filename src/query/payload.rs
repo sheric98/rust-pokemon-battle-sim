@@ -108,6 +108,7 @@ impl Payload {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct MoveQueryContext {
     pub src_trainer: bool,
     pub target_trainer: bool,

@@ -11,7 +11,7 @@ impl QueryBus {
         }
     }
 
-    pub fn query(&self, query: &Query, battle_state: &mut BattleState) {
+    pub fn query(&self, query: &mut Query, battle_state: &mut BattleState) {
         if self.registry.contains(&query.kind()) {
             let len = self.registry.get(&query.kind()).len(); // temporary copy of length
             for i in 0..len {
