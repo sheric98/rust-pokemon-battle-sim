@@ -1,7 +1,7 @@
-use crate::{battle::state::BattleState, common::{has_kind::HasKind, registry::Registry}, event::{event_handler::EventHandler, event_handler_effect::EventHandlerEffect, event_queue::EventQueue, event_type::{EventKind, EventType}}};
+use crate::{battle::state::BattleState, common::{has_kind::HasKind, registry::Registry}, event::{event_handler::EventHandler, event_handler_effect::EventHandlerEffect, event_queue::EventQueue, event_type::{EventKind, Event}}};
 
 pub struct EventBus {
-    pub registry: Registry<EventType, dyn EventHandler>,
+    pub registry: Registry<Event, dyn EventHandler>,
     pub event_queue: EventQueue,
 }
 
@@ -13,7 +13,7 @@ impl EventBus {
         }
     }
 
-    pub fn publish(&mut self, event: &EventType, battle_state: &mut BattleState) {
+    pub fn publish(&mut self, event: &Event, battle_state: &mut BattleState) {
         if self.registry.contains(&event.kind()) {
             let len = self.registry.get(&event.kind()).len(); // temporary copy of length
             for i in 0..len {

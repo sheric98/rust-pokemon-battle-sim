@@ -10,6 +10,7 @@ use crate::{battle::actions::Action, core::{pokemon::{base_pokemon::BasePokemon,
 pub struct Pokemon {
     pub level: u8,
 
+    pub max_hp: u16,
     pub hp: u16,
     pub attack: u16,
     pub spattack: u16,
@@ -76,6 +77,7 @@ impl Pokemon {
 
         Self {
             level,
+            max_hp: stat_map[StatEnum::HP],
             hp: stat_map[StatEnum::HP],
             attack: stat_map[StatEnum::Attack],
             spattack: stat_map[StatEnum::SpecialAttack],

@@ -1,7 +1,7 @@
-use crate::event::event_type::EventType;
+use crate::event::event_type::Event;
 
 pub struct EventQueue {
-    events: Vec<EventType>,
+    events: Vec<Event>,
 }
 
 impl EventQueue {
@@ -9,7 +9,7 @@ impl EventQueue {
         EventQueue { events: Vec::new() }
     }
 
-    pub fn add_event(&mut self, event: EventType) {
+    pub fn add_event(&mut self, event: Event) {
         self.events.push(event);
     }
 }

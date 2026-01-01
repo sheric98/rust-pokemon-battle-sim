@@ -1,4 +1,4 @@
-use crate::{common::has_kind::HasKind, query::payload::PayloadQuery};
+use crate::{common::has_kind::HasKind, query::payload::PayloadMoveQuery};
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]
 pub enum QueryKind {
@@ -20,22 +20,22 @@ pub enum QueryKind {
 }
 
 pub enum Query {
-    OnBasePower(PayloadQuery),
-    OnAtk(PayloadQuery),
-    OnDef(PayloadQuery),
-    OnMod1(PayloadQuery),
-    OnMod2(PayloadQuery),
-    OnMod3(PayloadQuery),
-    IsCrit(PayloadQuery),
-    CritMult(PayloadQuery),
-    StabMult(PayloadQuery),
-    OnPriority(PayloadQuery),
-    BeforeMove(PayloadQuery),
-    GetDeductPP(PayloadQuery),
-    CheckInvulnerability(PayloadQuery),
-    CheckImmunity(PayloadQuery),
-    TryHit(PayloadQuery),
-    FinalDamage(PayloadQuery),
+    OnBasePower(PayloadMoveQuery),
+    OnAtk(PayloadMoveQuery),
+    OnDef(PayloadMoveQuery),
+    OnMod1(PayloadMoveQuery),
+    OnMod2(PayloadMoveQuery),
+    OnMod3(PayloadMoveQuery),
+    IsCrit(PayloadMoveQuery),
+    CritMult(PayloadMoveQuery),
+    StabMult(PayloadMoveQuery),
+    OnPriority(PayloadMoveQuery),
+    BeforeMove(PayloadMoveQuery),
+    GetDeductPP(PayloadMoveQuery),
+    CheckInvulnerability(PayloadMoveQuery),
+    CheckImmunity(PayloadMoveQuery),
+    TryHit(PayloadMoveQuery),
+    FinalDamage(PayloadMoveQuery),
 }
 
 impl HasKind for Query {
@@ -47,7 +47,7 @@ impl HasKind for Query {
 }
 
 impl Query {
-    pub fn into_payload_query(self) -> PayloadQuery {
+    pub fn into_payload_move_query(self) -> PayloadMoveQuery {
         match self {
             Query::OnBasePower(e) => e,
             Query::OnAtk(e) => e,

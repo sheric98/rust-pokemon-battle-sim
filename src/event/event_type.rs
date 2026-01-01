@@ -5,42 +5,27 @@ pub enum EventKind {
     Damage,
     Switch,
     BeginTurn,
-    OnBasePower,
-    OnAtk,
-    OnDef,
-    OnMod1,
-    OnMod2,
-    OnMod3,
-    IsCrit,
-    CritMult,
-    StabMult,
-    OnPriority,
-    BeforeMove,
-    GetDeductPP,
-    CheckInvulnerability,
-    CheckImmunity,
-    TryHit,
 }
 
-pub enum EventType {
+pub enum Event {
     Damage(DamageEvent),
     Switch(SwitchEvent),
     BeginTurn,
 }
 
-impl HasKind for EventType {
+impl HasKind for Event {
     type Kind = EventKind;
 
     fn kind(&self) -> EventKind {
         match self {
-            EventType::Damage(_) => EventKind::Damage,
-            EventType::Switch(_) => EventKind::Switch,
-            EventType::BeginTurn => EventKind::BeginTurn,
+            Event::Damage(_) => EventKind::Damage,
+            Event::Switch(_) => EventKind::Switch,
+            Event::BeginTurn => EventKind::BeginTurn,
         }
     }
 }
 
-impl EventType {
+impl Event {
 
 }
 

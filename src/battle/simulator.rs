@@ -1,5 +1,5 @@
 use super::actions::Action;
-use crate::{battle::{battle_engine::BattleEngine, state::BattleState}, core::{pokemon::pokemon::Pokemon, pokemove::move_name::MoveName, poketype::{effectiveness, poketype::PokeType}, util::damage_utils}, dex::move_dex, event::{event_bus::EventBus, event_queue::EventQueue, event_type::{BeforeMoveEvent, CanApplyMoveEvent, DamageEvent, EventType, OnPriorityEvent}}, query::{payload::PayloadQuery, query::Query, query_bus::QueryBus}};
+use crate::{battle::{battle_engine::BattleEngine, state::BattleState}, core::{pokemon::pokemon::Pokemon, pokemove::move_name::MoveName, poketype::{effectiveness, poketype::PokeType}, util::damage_utils}, dex::move_dex, event::{event_bus::EventBus, event_queue::EventQueue, event_type::{BeforeMoveEvent, CanApplyMoveEvent, DamageEvent, Event, OnPriorityEvent}}, query::{payload::PayloadQuery, query::Query, query_bus::QueryBus}};
 
 
 pub struct BattleSimulator {
@@ -19,7 +19,7 @@ impl BattleSimulator {
 
     pub fn process_actions(&mut self, action1: Action, action2: Action)
     {
-        self.event_bus.publish(&EventType::BeginTurn, &mut self.battle_state);
+        self.event_bus.publish(&Event::BeginTurn, &mut self.battle_state);
         let action1_first = self.resolve_action_order(&action1, &action2);
 
         if action1_first {

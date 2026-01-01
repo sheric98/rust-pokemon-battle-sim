@@ -1,4 +1,4 @@
-use crate::{battle::state::BattleState, common::{has_kind::HasKind, registry::Registry}, event::{event_handler::EventHandler, event_handler_effect::EventHandlerEffect, event_queue::EventQueue, event_type::{EventKind, EventType}}, query::{query::Query, query_handler::QueryHandler}};
+use crate::{battle::state::BattleState, common::{has_kind::HasKind, registry::Registry}, event::{event_handler::EventHandler, event_handler_effect::EventHandlerEffect, event_queue::EventQueue, event_type::{EventKind, Event}}, query::{query::Query, query_handler::QueryHandler}};
 
 pub struct QueryBus {
     pub registry: Registry<Query, dyn QueryHandler>,
