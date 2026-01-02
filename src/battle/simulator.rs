@@ -1,5 +1,7 @@
+use std::sync::Arc;
+
 use super::actions::Action;
-use crate::{battle::{battle_engine::BattleEngine, state::BattleState}, core::{pokemon::pokemon::Pokemon, pokemove::{move_name::MoveName, move_target::MoveTarget}, poketype::{effectiveness, poketype::PokeType}, util::damage_utils}, dex::pokemove::move_dex, event::{event_bus::EventBus, event_queue::EventQueue, event_type::{BeforeMoveEvent, CanApplyMoveEvent, DamageEvent, Event, OnPriorityEvent}}, query::{payload::{MoveQueryContext, PayloadMoveQuery}, query::Query, query_bus::QueryBus}};
+use crate::{battle::{battle_engine::BattleEngine, state::BattleState, static_battle_handler::StaticBattleHandler}, core::{pokemon::pokemon::Pokemon, pokemove::{move_name::MoveName, move_target::MoveTarget}, poketype::{effectiveness, poketype::PokeType}, util::damage_utils}, dex::pokemove::move_dex, event::{event_bus::EventBus, event_queue::EventQueue, event_type::{BeforeMoveEvent, CanApplyMoveEvent, DamageEvent, Event, OnPriorityEvent}}, query::{payload::{MoveQueryContext, PayloadMoveQuery}, query::Query, query_bus::QueryBus}};
 
 
 pub struct BattleSimulator {
@@ -10,10 +12,16 @@ pub struct BattleSimulator {
 
 impl BattleSimulator {
     pub fn new() -> Self {
+        let mut event_bus = EventBus::new();
+        let mut query_bus = QueryBus::new();
+
+        // register defaults
+        query_bus.registry.add_handler(Arc::new(StaticBattleHandler));
+
         Self {
             battle_state: BattleState::new(),
-            event_bus: EventBus::new(),
-            query_bus: QueryBus::new(),
+            event_bus,
+            query_bus,
         }
     }
 

@@ -35,7 +35,7 @@ where
         }
     }
 
-    fn add_handler(&mut self, handler: Arc<U>) {
+    pub fn add_handler(&mut self, handler: Arc<U>) {
         handler.as_ref().subscriptions().iter().for_each(|kind| {
             let vec = self.subscribers.entry(*kind)
                 .or_insert_with(Vec::new);

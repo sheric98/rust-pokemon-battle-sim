@@ -11,7 +11,7 @@ pub struct PokeMove {
     #[builder(default)]
     pub accuracy: Option<u8>,
     #[builder(default=0)]
-    pub priority: i32,
+    pub priority: i8,
     pub move_type: PokeType,
     pub category: MoveCategory,
     pub pp: u32,
