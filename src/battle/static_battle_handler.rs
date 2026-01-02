@@ -51,7 +51,9 @@ impl QueryHandler for StaticBattleHandler {
             }
             Query::OnAtk(payload) => {
                 let move_category = payload.context.pokemove.category;
-                let pokemon = battle_state.get_active_pokemon(payload.context.src_trainer);
+                let pokemon = &battle_state
+                    .get_active_pokemon(payload.context.src_trainer)
+                    .pokemon;
                 let stat = match move_category {
                     MoveCategory::Physical => pokemon.attack,
                     MoveCategory::Special => pokemon.spattack,
@@ -62,7 +64,9 @@ impl QueryHandler for StaticBattleHandler {
             }
             Query::OnDef(payload) => {
                 let move_category = payload.context.pokemove.category;
-                let pokemon = battle_state.get_active_pokemon(payload.context.target_trainer);
+                let pokemon = &battle_state
+                    .get_active_pokemon(payload.context.target_trainer)
+                    .pokemon;
                 let stat = match move_category {
                     MoveCategory::Physical => pokemon.defense,
                     MoveCategory::Special => pokemon.spdefense,

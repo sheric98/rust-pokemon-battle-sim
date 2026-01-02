@@ -15,65 +15,75 @@ use crate::{
     handler,
 };
 
-handler! {Blaze ( state ) {
+handler! {Blaze ( s, state ) {
     queries {
         OnBasePower ( payload ) => {
+            if payload.context.src_trainer != s.trainer_side {
+                return
+            }
+
             let is_boosted = {
-                let src_pokemon: &Pokemon = state.get_active_pokemon(payload.context.src_trainer);
+                let src_pokemon: &Pokemon = &state.get_active_pokemon(payload.context.src_trainer).pokemon;
 
                 let move_type = payload.context.pokemove.move_type;
                 move_type == PokeType::Fire && src_pokemon.hp <= src_pokemon.max_hp / 3
             };
 
             if is_boosted {
-                payload;
+                payload.get_vec_f32().push(1.5);
             }
         },
     }
 }}
 
-handler! {Torrent ( state ) {
+handler! {Torrent ( s, state ) {
     queries {
         OnBasePower ( payload ) => {
+            if payload.context.src_trainer != s.trainer_side {
+                return
+            }
+
             let is_boosted = {
-                let src_pokemon: &Pokemon = state.get_active_pokemon(payload.context.src_trainer);
+                let src_pokemon: &Pokemon = &state.get_active_pokemon(payload.context.src_trainer).pokemon;
 
                 let move_type = payload.context.pokemove.move_type;
                 move_type == PokeType::Water && src_pokemon.hp <= src_pokemon.max_hp / 3
             };
 
             if is_boosted {
-                payload;
+                payload.get_vec_f32().push(1.5);
             }
 
         },
     }
 }}
 
-handler! {Overgrow ( state ) {
+handler! {Overgrow ( s, state ) {
     queries {
         OnBasePower ( payload ) => {
+            if payload.context.src_trainer != s.trainer_side {
+                return
+            }
+
             let is_boosted = {
-                let src_pokemon: &Pokemon = state.get_active_pokemon(payload.context.src_trainer);
+                let src_pokemon: &Pokemon = &state.get_active_pokemon(payload.context.src_trainer).pokemon;
 
                 let move_type = payload.context.pokemove.move_type;
                 move_type == PokeType::Grass && src_pokemon.hp <= src_pokemon.max_hp / 3
             };
 
             if is_boosted {
-                payload;
+                payload.get_vec_f32().push(1.5);
             }
 
         },
     }
 }}
 
-static ABILITY_MAP: LazyLock<EnumMap<Ability, Arc<dyn CombinedHandler>>> = ability_map! {ABILITY_MAP {
-    Blaze,
-    Torrent,
-    Overgrow,
-}};
-
-pub fn get_ability_handler(ability: &Ability) -> &Arc<dyn CombinedHandler> {
-    &ABILITY_MAP[*ability]
+pub fn get_ability_handler(ability: &Ability, trainer_side: bool) -> Arc<dyn CombinedHandler> {
+    match ability {
+        Ability::Blaze => Arc::new(Blaze::new(trainer_side)) as Arc<dyn CombinedHandler>,
+        Ability::Overgrow => Arc::new(Overgrow::new(trainer_side)) as Arc<dyn CombinedHandler>,
+        Ability::Torrent => Arc::new(Torrent::new(trainer_side)) as Arc<dyn CombinedHandler>,
+    }
 }

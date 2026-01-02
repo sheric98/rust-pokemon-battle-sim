@@ -1,5 +1,5 @@
 use crate::{
-    battle::actions::Action,
+    battle::{actions::Action, pokemon_battle_instance::PokemonBattleInstance},
     core::{pokemon::pokemon::Pokemon, pokemove::move_name::MoveName},
 };
 use rand::{Rng, SeedableRng, rngs::StdRng};
@@ -36,17 +36,17 @@ impl BattleState {
         side_state.take_damage(damage);
     }
 
-    pub fn get_active_pokemon(&self, trainer_1: bool) -> &Pokemon {
+    pub fn get_active_pokemon(&self, trainer_1: bool) -> &PokemonBattleInstance {
         self.get_side(trainer_1).get_active_pokemon()
     }
 
-    pub fn get_active_pokemon_mut(&mut self, trainer_1: bool) -> &mut Pokemon {
+    pub fn get_active_pokemon_mut(&mut self, trainer_1: bool) -> &mut PokemonBattleInstance {
         self.get_side_mut(trainer_1).get_active_pokemon_mut()
     }
 
     pub fn get_move_for_action(&self, trainer_1: bool, action: &Action) -> Option<MoveName> {
         let pokemon = self.get_active_pokemon(trainer_1);
-        pokemon.get_move_for_action(action)
+        pokemon.pokemon.get_move_for_action(action)
     }
 
     pub fn get_move_for_move_action(&self, trainer_1: bool, action: &Action) -> MoveName {
@@ -72,36 +72,41 @@ impl BattleState {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize)]
 pub struct SingleSideState {
     active_pokemon_idx: usize,
-    pokemon: Vec<Pokemon>,
+    pokemon: Vec<PokemonBattleInstance>,
+    trainer_1: bool,
 }
 
 impl SingleSideState {
-    pub fn new(pokemon: Vec<Pokemon>) -> Self {
+    pub fn new(pokemon: Vec<Pokemon>, trainer_1: bool) -> Self {
         Self {
             active_pokemon_idx: 0,
-            pokemon,
+            pokemon: pokemon
+                .iter()
+                .map(|p| PokemonBattleInstance::new(p.clone(), trainer_1))
+                .collect(),
+            trainer_1,
         }
     }
 
-    pub fn get_active_pokemon(&self) -> &Pokemon {
+    pub fn get_active_pokemon(&self) -> &PokemonBattleInstance {
         &self.pokemon[self.active_pokemon_idx]
     }
 
-    pub fn get_active_pokemon_mut(&mut self) -> &mut Pokemon {
+    pub fn get_active_pokemon_mut(&mut self) -> &mut PokemonBattleInstance {
         &mut self.pokemon[self.active_pokemon_idx]
     }
 
     // Returns true if the active Pokemon fainted
     pub fn take_damage(&mut self, damage: u32) -> bool {
         let active_pokemon = self.get_active_pokemon_mut();
-        if damage >= active_pokemon.hp as u32 {
-            active_pokemon.hp = 0;
+        if damage >= active_pokemon.pokemon.hp as u32 {
+            active_pokemon.pokemon.hp = 0;
             true
         } else {
-            active_pokemon.hp -= damage as u16;
+            active_pokemon.pokemon.hp -= damage as u16;
             false
         }
     }

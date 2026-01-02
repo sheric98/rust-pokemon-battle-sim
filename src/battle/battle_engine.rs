@@ -16,6 +16,8 @@ use crate::{
 pub struct BattleEngine;
 
 impl BattleEngine {
+    pub fn switch_pokemon(battle_state: &mut BattleState) {}
+
     pub fn try_use_move(
         battle_state: &mut BattleState,
         query_bus: &QueryBus,
@@ -109,6 +111,7 @@ impl BattleEngine {
         let move_type = move_dex::get_move_data(&move_context.move_name).move_type;
         let (type1_mult, type2_mult) = match battle_state
             .get_active_pokemon(move_context.target_trainer)
+            .pokemon
             .typing
         {
             PokemonTyping::MonoType(t) => {
@@ -123,6 +126,7 @@ impl BattleEngine {
         damage_utils::get_damage_for_move(
             battle_state
                 .get_active_pokemon(move_context.src_trainer)
+                .pokemon
                 .level,
             modified_base_power,
             modified_atk,

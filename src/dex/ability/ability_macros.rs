@@ -12,3 +12,10 @@ macro_rules! ability_map {
         })
     };
 }
+
+#[macro_export]
+macro_rules! register_abilities {
+    ($name:ident) => {
+        Ability::$name => Arc::new($name::new(trainer_side)) as Arc<dyn CombinedHandler>,
+    }
+}

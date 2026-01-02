@@ -7,6 +7,7 @@ use strum::IntoEnumIterator;
 use crate::{
     battle::actions::Action,
     core::{
+        ability::ability::Ability,
         pokemon::{base_pokemon::BasePokemon, nature::Nature, stat_enum::StatEnum},
         pokemove::move_name::MoveName,
         poketype::{pokemon_typing::PokemonTyping, poketype::PokeType},
@@ -29,6 +30,8 @@ pub struct Pokemon {
     pub typing: PokemonTyping,
 
     pub moves: (MoveName, MoveName, MoveName, MoveName),
+
+    pub ability: Ability,
 }
 
 impl Pokemon {
@@ -36,6 +39,7 @@ impl Pokemon {
         base_pokemon: BasePokemon,
         level: u8,
         moves: Vec<MoveName>,
+        ability: Ability,
         ivs: HashMap<StatEnum, u8>,
         evs: HashMap<StatEnum, u8>,
         nature: Nature,
@@ -108,6 +112,7 @@ impl Pokemon {
             speed: stat_map[StatEnum::Speed],
             typing: base_pokemon.typing,
             moves: moves_tuple,
+            ability,
         }
     }
 

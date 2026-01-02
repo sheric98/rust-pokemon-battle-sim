@@ -35,20 +35,31 @@ macro_rules! handler {
     //     crate::impl_query_handler!($name, $( $query ),*);
     // };
 
-    ($name:ident ( $state_var:tt ) {
+    ($name:ident ( $self:ident, $state_var:tt ) {
         queries {
             $(
                 $variant:ident ( $($pat:tt)* ) $([priority = $priority:expr])? => $handler:block
             ),* $(,)?
         }
     }) => {
-        struct $name;
+        struct $name {
+            trainer_side: bool,
+        }
+
+        impl $name {
+            pub fn new(trainer_side: bool) -> Self {
+                Self {
+                    trainer_side,
+                }
+            }
+        }
 
         impl crate::dex::combined_handler::CombinedHandler for $name {}
 
         impl crate::query::query_handler::QueryHandler for $name {
             fn handle(&self, query: &mut crate::query::query::Query, state: &crate::battle::state::BattleState) {
                 let $state_var = state;
+                let $self = self;
                 match query {
                     $(
                         crate::query::query::Query::$variant($($pat)*) => {

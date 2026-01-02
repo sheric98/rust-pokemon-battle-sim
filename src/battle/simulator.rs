@@ -86,8 +86,8 @@ impl BattleSimulator {
         } else if priority2 > priority1 {
             false
         } else {
-            let speed1 = self.battle_state.get_active_pokemon(true).speed;
-            let speed2 = self.battle_state.get_active_pokemon(false).speed;
+            let speed1 = self.battle_state.get_active_pokemon(true).pokemon.speed;
+            let speed2 = self.battle_state.get_active_pokemon(false).pokemon.speed;
             if speed1 > speed2 {
                 true
             } else if speed2 > speed1 {
