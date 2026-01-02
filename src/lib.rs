@@ -8,20 +8,18 @@ mod dex;
 mod event;
 mod query;
 
-use battle::simulator::BattleSimulator;
+use battle::battle::Battle;
 
 #[pyclass]
 struct Env {
-    sim: BattleSimulator,
+    sim: Battle,
 }
 
 #[pymethods]
 impl Env {
     #[new]
     fn new() -> Self {
-        Self {
-            sim: BattleSimulator::new(),
-        }
+        Self { sim: Battle::new() }
     }
 }
 

@@ -31,3 +31,25 @@ impl Action {
         )
     }
 }
+
+pub enum BattleAction {
+    Move(u8),
+    Switch(u8),
+}
+
+impl BattleAction {
+    pub fn validate(self) {
+        match self {
+            BattleAction::Move(idx) => {
+                if idx >= 4 {
+                    panic!("Too large of index for move choice")
+                }
+            }
+            BattleAction::Switch(idx) => {
+                if idx >= 6 {
+                    panic!("Too large of index for switch choice")
+                }
+            }
+        }
+    }
+}

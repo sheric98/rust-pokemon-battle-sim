@@ -24,13 +24,13 @@ use crate::{
     },
 };
 
-pub struct BattleSimulator {
+pub struct Battle {
     battle_state: BattleState,
     event_bus: EventBus,
     query_bus: QueryBus,
 }
 
-impl BattleSimulator {
+impl Battle {
     pub fn new() -> Self {
         let mut event_bus = EventBus::new();
         let mut query_bus = QueryBus::new();
@@ -70,7 +70,7 @@ impl BattleSimulator {
             let move_name = self
                 .battle_state
                 .get_move_for_move_action(is_trainer_1, &action);
-            let move_context = BattleSimulator::create_move_context(move_name, is_trainer_1);
+            let move_context = Battle::create_move_context(move_name, is_trainer_1);
 
             BattleEngine::try_use_move(&mut self.battle_state, &self.query_bus, &move_context);
         }
@@ -114,7 +114,7 @@ impl BattleSimulator {
             6
         } else {
             let move_name = optional_move.expect("Expected a move for non-switch action");
-            let context = BattleSimulator::create_move_context(move_name, is_trainer_1);
+            let context = Battle::create_move_context(move_name, is_trainer_1);
             let mut priority_query = Query::OnPriority(PayloadMoveQuery::i8(context));
             self.query_bus
                 .query(&mut priority_query, &mut self.battle_state);
