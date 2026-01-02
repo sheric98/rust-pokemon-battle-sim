@@ -1,5 +1,4 @@
-use std::collections::HashMap;
-use std::rc::Rc;
+use std::{collections::HashMap, sync::Arc};
 
 use crate::common::{has_kind::HasKind, subscriber::Subscriber};
 
@@ -8,7 +7,7 @@ where
     T: HasKind,
     U: ?Sized + Subscriber<T> {
         
-    subscribers: HashMap<T::Kind, Vec<Rc<U>>>
+    subscribers: HashMap<T::Kind, Vec<Arc<U>>>
 }
 
 impl<T, U> Registry<T, U>
@@ -26,17 +25,17 @@ where
         self.subscribers.contains_key(kind)
     }
 
-    pub fn get(&self, kind: &T::Kind) -> &Vec<Rc<U>> {
+    pub fn get(&self, kind: &T::Kind) -> &Vec<Arc<U>> {
         &self.subscribers[kind]
     }
 
-    pub fn add_handlers(&mut self, handlers: Vec<Rc<U>>) {
+    pub fn add_handlers(&mut self, handlers: Vec<Arc<U>>) {
         for handler in handlers {
             self.add_handler(handler);
         }
     }
 
-    fn add_handler(&mut self, handler: Rc<U>) {
+    fn add_handler(&mut self, handler: Arc<U>) {
         handler.as_ref().subscriptions().iter().for_each(|kind| {
             let vec = self.subscribers.entry(*kind)
                 .or_insert_with(Vec::new);
@@ -49,11 +48,11 @@ where
     }
 
     // TODO: Evaluate if this is the best way to remove handlers
-    pub fn remove_handlers(&mut self, handlers: Vec<Rc<U>>) {
+    pub fn remove_handlers(&mut self, handlers: Vec<Arc<U>>) {
         for handler in handlers {
             handler.as_ref().subscriptions().iter().for_each(|event_kind| {
                 if let Some(subscribers) = self.subscribers.get_mut(event_kind) {
-                    subscribers.retain(|s| !Rc::ptr_eq(s, &handler));
+                    subscribers.retain(|s| !Arc::ptr_eq(s, &handler));
                 }
             });
         }
