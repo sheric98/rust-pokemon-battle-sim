@@ -1,4 +1,8 @@
-use crate::core::{pokemon::pokemon::Pokemon, pokemove::{move_name::MoveName, pokemove::PokeMove}, util::damage_utils};
+use crate::core::{
+    pokemon::pokemon::Pokemon,
+    pokemove::{move_name::MoveName, pokemove::PokeMove},
+    util::damage_utils,
+};
 
 pub enum Payload {
     U8(u8),
@@ -121,7 +125,7 @@ pub struct PayloadMoveQuery {
     pub payload: Payload,
 }
 
-impl  PayloadMoveQuery {
+impl PayloadMoveQuery {
     pub fn new(context: MoveQueryContext, payload: Payload) -> Self {
         Self { context, payload }
     }

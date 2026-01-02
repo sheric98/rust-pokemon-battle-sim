@@ -1,4 +1,4 @@
-pub enum VolatileStatus{
+pub enum VolatileStatus {
     Confusion,
     Infatuation,
     LeechSeed,

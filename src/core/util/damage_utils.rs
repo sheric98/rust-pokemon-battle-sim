@@ -31,13 +31,18 @@ pub fn get_damage_for_move(
     type2_mult: f32,
 ) -> u32 {
     let inner1: f32 = (((level * 2) as f32) / 5.0).floor() + 2.0;
-    let inner2: f32 = ((((inner1 * (bp as f32)).floor() * (atk as f32)) / 50.0).floor() / (def as f32)).floor() * (mod1 as f32) + 2.0;
-    ((((((((inner2 * crit_mult).floor() * (mod2 as f32))
-        .floor() * (r as f32))
-        .floor() / 100.0)
-        .floor() * stab_mult)
-        .floor() * type1_mult)
-        .floor() * type2_mult)
-        .floor() * (mod3 as f32))
+    let inner2: f32 =
+        ((((inner1 * (bp as f32)).floor() * (atk as f32)) / 50.0).floor() / (def as f32)).floor()
+            * (mod1 as f32)
+            + 2.0;
+    ((((((((inner2 * crit_mult).floor() * (mod2 as f32)).floor() * (r as f32)).floor() / 100.0)
+        .floor()
+        * stab_mult)
+        .floor()
+        * type1_mult)
+        .floor()
+        * type2_mult)
+        .floor()
+        * (mod3 as f32))
         .floor() as u32
 }

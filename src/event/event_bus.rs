@@ -1,4 +1,13 @@
-use crate::{battle::state::BattleState, common::{has_kind::HasKind, registry::Registry}, event::{event_handler::EventHandler, event_handler_effect::EventHandlerEffect, event_queue::EventQueue, event_type::{EventKind, Event}}};
+use crate::{
+    battle::state::BattleState,
+    common::{has_kind::HasKind, registry::Registry},
+    event::{
+        event_handler::EventHandler,
+        event_handler_effect::EventHandlerEffect,
+        event_queue::EventQueue,
+        event_type::{Event, EventKind},
+    },
+};
 
 pub struct EventBus {
     pub registry: Registry<Event, dyn EventHandler>,
@@ -23,7 +32,11 @@ impl EventBus {
         }
     }
 
-    fn process_event_effects(&mut self, effects: Vec<EventHandlerEffect>, battle_state: &mut BattleState) {
+    fn process_event_effects(
+        &mut self,
+        effects: Vec<EventHandlerEffect>,
+        battle_state: &mut BattleState,
+    ) {
         for effect in effects {
             self.process_event_effect(effect, battle_state);
         }
@@ -31,7 +44,9 @@ impl EventBus {
 
     fn process_event_effect(&mut self, effect: EventHandlerEffect, battle_state: &mut BattleState) {
         match effect {
-            EventHandlerEffect::Damage(_) => {panic!("Not implemented yet");},
+            EventHandlerEffect::Damage(_) => {
+                panic!("Not implemented yet");
+            }
         }
     }
 }

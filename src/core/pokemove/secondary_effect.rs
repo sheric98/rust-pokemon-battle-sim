@@ -1,4 +1,7 @@
-use crate::core::{pokemon::stat_enum::StatEnum, status::{status::Status, volatile_status::VolatileStatus}};
+use crate::core::{
+    pokemon::stat_enum::StatEnum,
+    status::{status::Status, volatile_status::VolatileStatus},
+};
 
 pub enum SecondaryEffect {
     Status(Status),

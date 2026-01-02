@@ -1,4 +1,12 @@
-use crate::{common::subscriber::Subscriber, core::pokemove::move_category::MoveCategory, query::{payload::Payload, query::{Query, QueryKind}, query_handler::QueryHandler}};
+use crate::{
+    common::subscriber::Subscriber,
+    core::pokemove::move_category::MoveCategory,
+    query::{
+        payload::Payload,
+        query::{Query, QueryKind},
+        query_handler::QueryHandler,
+    },
+};
 
 pub struct StaticBattleHandler;
 
@@ -24,15 +32,23 @@ impl Subscriber<Query> for StaticBattleHandler {
 }
 
 impl QueryHandler for StaticBattleHandler {
-    fn handle(&self, query: &mut crate::query::query::Query, battle_state: &crate::battle::state::BattleState) {
+    fn handle(
+        &self,
+        query: &mut crate::query::query::Query,
+        battle_state: &crate::battle::state::BattleState,
+    ) {
         match query {
             Query::OnBasePower(payload) => {
-                let power = payload.context.pokemove.power.expect("Getting base power of move with no power");
+                let power = payload
+                    .context
+                    .pokemove
+                    .power
+                    .expect("Getting base power of move with no power");
                 payload.get_vec_f32().push(power as f32)
-            },
+            }
             Query::OnPriority(payload) => {
                 payload.payload = Payload::I8(payload.context.pokemove.priority);
-            },
+            }
             Query::OnAtk(payload) => {
                 let move_category = payload.context.pokemove.category;
                 let pokemon = battle_state.get_active_pokemon(payload.context.src_trainer);
@@ -43,7 +59,7 @@ impl QueryHandler for StaticBattleHandler {
                 };
 
                 payload.get_vec_f32().push(stat as f32)
-            },
+            }
             Query::OnDef(payload) => {
                 let move_category = payload.context.pokemove.category;
                 let pokemon = battle_state.get_active_pokemon(payload.context.target_trainer);

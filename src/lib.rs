@@ -19,7 +19,9 @@ struct Env {
 impl Env {
     #[new]
     fn new() -> Self {
-        Self { sim: BattleSimulator::new() }
+        Self {
+            sim: BattleSimulator::new(),
+        }
     }
 }
 

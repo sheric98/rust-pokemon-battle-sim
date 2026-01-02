@@ -25,10 +25,7 @@ impl HasKind for Event {
     }
 }
 
-impl Event {
-
-}
-
+impl Event {}
 
 // Event Payloads with data outside of BattleState
 

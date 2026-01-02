@@ -4,7 +4,15 @@ use enum_map::EnumMap;
 use serde::{Deserialize, Serialize};
 use strum::IntoEnumIterator;
 
-use crate::{battle::actions::Action, core::{pokemon::{base_pokemon::BasePokemon, nature::Nature, stat_enum::StatEnum}, pokemove::move_name::MoveName, poketype::{pokemon_typing::PokemonTyping, poketype::PokeType}, util::stat_utils}};
+use crate::{
+    battle::actions::Action,
+    core::{
+        pokemon::{base_pokemon::BasePokemon, nature::Nature, stat_enum::StatEnum},
+        pokemove::move_name::MoveName,
+        poketype::{pokemon_typing::PokemonTyping, poketype::PokeType},
+        util::stat_utils,
+    },
+};
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Pokemon {
@@ -24,13 +32,24 @@ pub struct Pokemon {
 }
 
 impl Pokemon {
-    pub fn new(base_pokemon: BasePokemon, level: u8, moves: Vec<MoveName>, ivs: HashMap<StatEnum, u8>, evs: HashMap<StatEnum, u8>, nature: Nature) -> Self {
+    pub fn new(
+        base_pokemon: BasePokemon,
+        level: u8,
+        moves: Vec<MoveName>,
+        ivs: HashMap<StatEnum, u8>,
+        evs: HashMap<StatEnum, u8>,
+        nature: Nature,
+    ) -> Self {
         if level == 0 || level > 100 {
             panic!("Disallowed level")
         }
 
         let num_moves = moves.len();
-        let unique_moves_len = moves.clone().into_iter().collect::<HashSet<MoveName>>().len();
+        let unique_moves_len = moves
+            .clone()
+            .into_iter()
+            .collect::<HashSet<MoveName>>()
+            .len();
         if unique_moves_len != num_moves {
             panic!("Contains duplicate moves")
         }
@@ -48,7 +67,10 @@ impl Pokemon {
         let mut stat_map: EnumMap<StatEnum, u16> = EnumMap::default();
 
         for stat_enum in StatEnum::iter() {
-            assert!(ivs.contains_key(&stat_enum) && ivs[&stat_enum] <= 31, "Invalid iv for {stat_enum}");
+            assert!(
+                ivs.contains_key(&stat_enum) && ivs[&stat_enum] <= 31,
+                "Invalid iv for {stat_enum}"
+            );
             assert!(evs.contains_key(&stat_enum), "Invalid ev for {stat_enum}");
 
             let iv = ivs[&stat_enum];

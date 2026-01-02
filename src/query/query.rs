@@ -40,7 +40,7 @@ pub enum Query {
 
 impl HasKind for Query {
     type Kind = QueryKind;
-    
+
     fn kind(&self) -> QueryKind {
         todo!()
     }

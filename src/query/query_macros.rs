@@ -35,7 +35,7 @@ macro_rules! impl_query_handler {
                 // match query {
                 //     $(
                 //         $(query[0]) => $query[3](query, state),
-                        
+
                 //         // {
                 //         //     let (pat, _, _, handler) = $query;
                 //         //     pat => handler(query, state),
@@ -99,7 +99,9 @@ macro_rules! impl_query_handler {
 macro_rules! impl_empty_query_handler {
     ($name:ident) => {
         impl QueryHandler for $name {
-            fn handle(&self, _: &Query, _: &BattleState) { panic!("Query not handled") }
+            fn handle(&self, _: &Query, _: &BattleState) {
+                panic!("Query not handled")
+            }
         }
 
         impl Subscriber<Query> for $name {

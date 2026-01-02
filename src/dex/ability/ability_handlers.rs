@@ -1,10 +1,21 @@
-use std::{collections::HashMap, rc::Rc, sync::{Arc, LazyLock}};
+use std::{
+    collections::HashMap,
+    rc::Rc,
+    sync::{Arc, LazyLock},
+};
 
-use enum_map::{enum_map, EnumMap};
+use enum_map::{EnumMap, enum_map};
 
-use crate::{ability_map, battle::state::BattleState, core::{ability::ability::Ability, pokemon::pokemon::Pokemon, poketype::poketype::PokeType}, dex::combined_handler::CombinedHandler, event::event_handler::EventHandler, handler};
+use crate::{
+    ability_map,
+    battle::state::BattleState,
+    core::{ability::ability::Ability, pokemon::pokemon::Pokemon, poketype::poketype::PokeType},
+    dex::combined_handler::CombinedHandler,
+    event::event_handler::EventHandler,
+    handler,
+};
 
-handler!{Blaze ( state ) {
+handler! {Blaze ( state ) {
     queries {
         OnBasePower ( payload ) => {
             let is_boosted = {
@@ -21,7 +32,7 @@ handler!{Blaze ( state ) {
     }
 }}
 
-handler!{Torrent ( state ) {
+handler! {Torrent ( state ) {
     queries {
         OnBasePower ( payload ) => {
             let is_boosted = {
@@ -39,7 +50,7 @@ handler!{Torrent ( state ) {
     }
 }}
 
-handler!{Overgrow ( state ) {
+handler! {Overgrow ( state ) {
     queries {
         OnBasePower ( payload ) => {
             let is_boosted = {
@@ -57,7 +68,7 @@ handler!{Overgrow ( state ) {
     }
 }}
 
-static ABILITY_MAP: LazyLock<EnumMap<Ability, Arc<dyn CombinedHandler>>> = ability_map!{ABILITY_MAP {
+static ABILITY_MAP: LazyLock<EnumMap<Ability, Arc<dyn CombinedHandler>>> = ability_map! {ABILITY_MAP {
     Blaze,
     Torrent,
     Overgrow,

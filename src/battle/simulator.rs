@@ -1,8 +1,28 @@
 use std::sync::Arc;
 
 use super::actions::Action;
-use crate::{battle::{battle_engine::BattleEngine, state::BattleState, static_battle_handler::StaticBattleHandler}, core::{pokemon::pokemon::Pokemon, pokemove::{move_name::MoveName, move_target::MoveTarget}, poketype::{effectiveness, poketype::PokeType}, util::damage_utils}, dex::pokemove::move_dex, event::{event_bus::EventBus, event_queue::EventQueue, event_type::{BeforeMoveEvent, CanApplyMoveEvent, DamageEvent, Event, OnPriorityEvent}}, query::{payload::{MoveQueryContext, PayloadMoveQuery}, query::Query, query_bus::QueryBus}};
-
+use crate::{
+    battle::{
+        battle_engine::BattleEngine, state::BattleState, static_battle_handler::StaticBattleHandler,
+    },
+    core::{
+        pokemon::pokemon::Pokemon,
+        pokemove::{move_name::MoveName, move_target::MoveTarget},
+        poketype::{effectiveness, poketype::PokeType},
+        util::damage_utils,
+    },
+    dex::pokemove::move_dex,
+    event::{
+        event_bus::EventBus,
+        event_queue::EventQueue,
+        event_type::{BeforeMoveEvent, CanApplyMoveEvent, DamageEvent, Event, OnPriorityEvent},
+    },
+    query::{
+        payload::{MoveQueryContext, PayloadMoveQuery},
+        query::Query,
+        query_bus::QueryBus,
+    },
+};
 
 pub struct BattleSimulator {
     battle_state: BattleState,
@@ -16,7 +36,9 @@ impl BattleSimulator {
         let mut query_bus = QueryBus::new();
 
         // register defaults
-        query_bus.registry.add_handler(Arc::new(StaticBattleHandler));
+        query_bus
+            .registry
+            .add_handler(Arc::new(StaticBattleHandler));
 
         Self {
             battle_state: BattleState::new(),
@@ -25,9 +47,9 @@ impl BattleSimulator {
         }
     }
 
-    pub fn process_actions(&mut self, action1: Action, action2: Action)
-    {
-        self.event_bus.publish(&Event::BeginTurn, &mut self.battle_state);
+    pub fn process_actions(&mut self, action1: Action, action2: Action) {
+        self.event_bus
+            .publish(&Event::BeginTurn, &mut self.battle_state);
         let action1_first = self.resolve_action_order(&action1, &action2);
 
         if action1_first {
@@ -45,9 +67,11 @@ impl BattleSimulator {
             // This is a placeholder for actual switch logic
             return;
         } else {
-            let move_name = self.battle_state.get_move_for_move_action(is_trainer_1, &action);
+            let move_name = self
+                .battle_state
+                .get_move_for_move_action(is_trainer_1, &action);
             let move_context = BattleSimulator::create_move_context(move_name, is_trainer_1);
-            
+
             BattleEngine::try_use_move(&mut self.battle_state, &self.query_bus, &move_context);
         }
     }
@@ -80,14 +104,20 @@ impl BattleSimulator {
         self.get_move_priority(move1_option, action, is_trainer_1)
     }
 
-    fn get_move_priority(&mut self, optional_move: Option<MoveName>, action: &Action, is_trainer_1: bool) -> i8 {
+    fn get_move_priority(
+        &mut self,
+        optional_move: Option<MoveName>,
+        action: &Action,
+        is_trainer_1: bool,
+    ) -> i8 {
         if action.is_switch() {
             6
         } else {
             let move_name = optional_move.expect("Expected a move for non-switch action");
             let context = BattleSimulator::create_move_context(move_name, is_trainer_1);
             let mut priority_query = Query::OnPriority(PayloadMoveQuery::i8(context));
-            self.query_bus.query(&mut priority_query, &mut self.battle_state);
+            self.query_bus
+                .query(&mut priority_query, &mut self.battle_state);
             priority_query.into_payload_move_query().get_i8()
         }
     }

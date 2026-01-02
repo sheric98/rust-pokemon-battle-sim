@@ -65,7 +65,11 @@ macro_rules! impl_event_handler {
 macro_rules! impl_empty_event_handler {
     ($name:ident) => {
         impl crate::event::event_handler::EventHandler for $name {
-            fn handle(&self, _: &crate::event::event_type::Event, _: &crate::battle::state::BattleState) -> Vec<crate::event::event_handler_effect::EventHandlerEffect> { 
+            fn handle(
+                &self,
+                _: &crate::event::event_type::Event,
+                _: &crate::battle::state::BattleState,
+            ) -> Vec<crate::event::event_handler_effect::EventHandlerEffect> {
                 panic!("Event not handled")
             }
         }

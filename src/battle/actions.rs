@@ -13,7 +13,10 @@ pub enum Action {
 
 impl Action {
     pub fn is_move(&self) -> bool {
-        matches!(self, Action::Move1 | Action::Move2 | Action::Move3 | Action::Move4)
+        matches!(
+            self,
+            Action::Move1 | Action::Move2 | Action::Move3 | Action::Move4
+        )
     }
 
     pub fn is_switch(&self) -> bool {
@@ -28,4 +31,3 @@ impl Action {
         )
     }
 }
-

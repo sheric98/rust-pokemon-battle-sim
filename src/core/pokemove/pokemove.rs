@@ -1,7 +1,20 @@
 use serde::{Deserialize, Serialize};
 use typed_builder::TypedBuilder;
 
-use crate::{core::{pokemon::stat_enum::StatEnum, pokemove::{move_category::{self, MoveCategory}, move_name::MoveName, move_target::MoveTarget, secondary_effect::SecondaryEffect}, poketype::poketype::PokeType, status::{status::Status, volatile_status::VolatileStatus}}, event::{event_handler::EventHandler}};
+use crate::{
+    core::{
+        pokemon::stat_enum::StatEnum,
+        pokemove::{
+            move_category::{self, MoveCategory},
+            move_name::MoveName,
+            move_target::MoveTarget,
+            secondary_effect::SecondaryEffect,
+        },
+        poketype::poketype::PokeType,
+        status::{status::Status, volatile_status::VolatileStatus},
+    },
+    event::event_handler::EventHandler,
+};
 
 #[derive(TypedBuilder)]
 pub struct PokeMove {
@@ -10,7 +23,7 @@ pub struct PokeMove {
     pub power: Option<u32>,
     #[builder(default)]
     pub accuracy: Option<u8>,
-    #[builder(default=0)]
+    #[builder(default = 0)]
     pub priority: i8,
     pub move_type: PokeType,
     pub category: MoveCategory,

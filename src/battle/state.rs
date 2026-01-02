@@ -1,6 +1,9 @@
-use serde::{Serialize, Deserialize};
-use crate::{battle::actions::Action, core::{pokemon::pokemon::Pokemon, pokemove::move_name::MoveName}};
+use crate::{
+    battle::actions::Action,
+    core::{pokemon::pokemon::Pokemon, pokemove::move_name::MoveName},
+};
 use rand::{Rng, SeedableRng, rngs::StdRng};
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Serialize)]
 pub struct BattleState {
@@ -16,7 +19,7 @@ impl BattleState {
         Self {
             trainer_1_state: None,
             trainer_2_state: None,
-            rng: StdRng::from_entropy()
+            rng: StdRng::from_entropy(),
         }
     }
 
@@ -47,7 +50,8 @@ impl BattleState {
     }
 
     pub fn get_move_for_move_action(&self, trainer_1: bool, action: &Action) -> MoveName {
-        self.get_move_for_action(trainer_1, action).expect("Unexpected action for move")
+        self.get_move_for_action(trainer_1, action)
+            .expect("Unexpected action for move")
     }
 
     fn get_side(&self, trainer_1: bool) -> &SingleSideState {
@@ -102,4 +106,3 @@ impl SingleSideState {
         }
     }
 }
-
