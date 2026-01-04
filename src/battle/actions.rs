@@ -1,55 +1,32 @@
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MoveSlot {
+    Slot0,
+    Slot1,
+    Slot2,
+    Slot3,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum SwitchSlot {
+    Slot0,
+    Slot1,
+    Slot2,
+    Slot3,
+    Slot4,
+    Slot5,
+}
+
 pub enum Action {
-    Move1,
-    Move2,
-    Move3,
-    Move4,
-    SwitchPokemon1,
-    SwitchPokemon2,
-    SwitchPokemon3,
-    SwitchPokemon4,
-    SwitchPokemon5,
-    SwitchPokemon6,
+    Move(MoveSlot),
+    Switch(SwitchSlot),
 }
 
 impl Action {
     pub fn is_move(&self) -> bool {
-        matches!(
-            self,
-            Action::Move1 | Action::Move2 | Action::Move3 | Action::Move4
-        )
+        matches!(self, Action::Move(_))
     }
 
     pub fn is_switch(&self) -> bool {
-        matches!(
-            self,
-            Action::SwitchPokemon1
-                | Action::SwitchPokemon2
-                | Action::SwitchPokemon3
-                | Action::SwitchPokemon4
-                | Action::SwitchPokemon5
-                | Action::SwitchPokemon6
-        )
-    }
-}
-
-pub enum BattleAction {
-    Move(u8),
-    Switch(u8),
-}
-
-impl BattleAction {
-    pub fn validate(self) {
-        match self {
-            BattleAction::Move(idx) => {
-                if idx >= 4 {
-                    panic!("Too large of index for move choice")
-                }
-            }
-            BattleAction::Switch(idx) => {
-                if idx >= 6 {
-                    panic!("Too large of index for switch choice")
-                }
-            }
-        }
+        matches!(self, Action::Switch(_))
     }
 }

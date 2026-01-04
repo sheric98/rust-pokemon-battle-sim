@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use strum::IntoEnumIterator;
 
 use crate::{
-    battle::actions::Action,
+    battle::actions::{Action, MoveSlot},
     core::{
         ability::ability::Ability,
         pokemon::{base_pokemon::BasePokemon, nature::Nature, stat_enum::StatEnum},
@@ -118,10 +118,10 @@ impl Pokemon {
 
     pub fn get_move_for_action(&self, action: &Action) -> Option<MoveName> {
         match action {
-            Action::Move1 => Some(self.moves.0),
-            Action::Move2 => Some(self.moves.1),
-            Action::Move3 => Some(self.moves.2),
-            Action::Move4 => Some(self.moves.3),
+            Action::Move(MoveSlot::Slot0) => Some(self.moves.0),
+            Action::Move(MoveSlot::Slot1) => Some(self.moves.1),
+            Action::Move(MoveSlot::Slot2) => Some(self.moves.2),
+            Action::Move(MoveSlot::Slot3) => Some(self.moves.3),
             _ => None,
         }
     }
