@@ -1,15 +1,20 @@
-use crate::{common::has_kind::HasKind, core::pokemove::move_name::MoveName};
+use crate::{
+    common::{context::MoveContext, has_kind::HasKind},
+    core::pokemove::move_name::MoveName,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
 pub enum EventKind {
     Damage,
     Switch,
     BeginTurn,
+    Faint,
 }
 
 pub enum Event {
     Damage(DamageEvent),
     Switch(SwitchEvent),
+    Faint(FaintEvent),
     BeginTurn,
 }
 
@@ -21,6 +26,7 @@ impl HasKind for Event {
             Event::Damage(_) => EventKind::Damage,
             Event::Switch(_) => EventKind::Switch,
             Event::BeginTurn => EventKind::BeginTurn,
+            Event::Faint(_) => EventKind::Faint,
         }
     }
 }
@@ -38,6 +44,11 @@ pub struct DamageEvent {
 pub struct SwitchEvent {
     pub orig_pokemon_idx: usize,
     pub new_pokemon_idx: usize,
+}
+
+pub struct FaintEvent {
+    pub move_context: Option<MoveContext>,
+    pub trainer_side: bool,
 }
 
 pub struct OnPriorityEvent {

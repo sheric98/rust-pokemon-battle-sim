@@ -1,7 +1,10 @@
-use crate::core::{
-    pokemon::pokemon::Pokemon,
-    pokemove::{move_name::MoveName, pokemove::PokeMove},
-    util::damage_utils,
+use crate::{
+    common::context::MoveContext,
+    core::{
+        pokemon::pokemon::Pokemon,
+        pokemove::{move_name::MoveName, pokemove::PokeMove},
+        util::damage_utils,
+    },
 };
 
 pub enum Payload {
@@ -112,186 +115,178 @@ impl Payload {
     }
 }
 
-#[derive(Clone, Copy)]
-pub struct MoveQueryContext {
-    pub src_trainer: bool,
-    pub target_trainer: bool,
-    pub move_name: MoveName,
-    pub pokemove: &'static PokeMove,
-}
-
 pub struct PayloadMoveQuery {
-    pub context: MoveQueryContext,
+    pub context: MoveContext,
     pub payload: Payload,
 }
 
 impl PayloadMoveQuery {
-    pub fn new(context: MoveQueryContext, payload: Payload) -> Self {
+    pub fn new(context: MoveContext, payload: Payload) -> Self {
         Self { context, payload }
     }
 
-    pub fn u8(context: MoveQueryContext) -> Self {
+    pub fn u8(context: MoveContext) -> Self {
         Self {
             context,
             payload: Payload::U8(0),
         }
     }
 
-    pub fn u8_with_default(context: MoveQueryContext, default: u8) -> Self {
+    pub fn u8_with_default(context: MoveContext, default: u8) -> Self {
         Self {
             context,
             payload: Payload::U8(default),
         }
     }
 
-    pub fn u16(context: MoveQueryContext) -> Self {
+    pub fn u16(context: MoveContext) -> Self {
         Self {
             context,
             payload: Payload::U16(0),
         }
     }
 
-    pub fn u16_with_default(context: MoveQueryContext, default: u16) -> Self {
+    pub fn u16_with_default(context: MoveContext, default: u16) -> Self {
         Self {
             context,
             payload: Payload::U16(default),
         }
     }
 
-    pub fn u32(context: MoveQueryContext) -> Self {
+    pub fn u32(context: MoveContext) -> Self {
         Self {
             context,
             payload: Payload::U32(0),
         }
     }
 
-    pub fn u32_with_default(context: MoveQueryContext, default: u32) -> Self {
+    pub fn u32_with_default(context: MoveContext, default: u32) -> Self {
         Self {
             context,
             payload: Payload::U32(default),
         }
     }
 
-    pub fn u64(context: MoveQueryContext) -> Self {
+    pub fn u64(context: MoveContext) -> Self {
         Self {
             context,
             payload: Payload::U64(0),
         }
     }
 
-    pub fn u64_with_default(context: MoveQueryContext, default: u64) -> Self {
+    pub fn u64_with_default(context: MoveContext, default: u64) -> Self {
         Self {
             context,
             payload: Payload::U64(default),
         }
     }
 
-    pub fn i8(context: MoveQueryContext) -> Self {
+    pub fn i8(context: MoveContext) -> Self {
         Self {
             context,
             payload: Payload::I8(0),
         }
     }
 
-    pub fn i8_with_default(context: MoveQueryContext, default: i8) -> Self {
+    pub fn i8_with_default(context: MoveContext, default: i8) -> Self {
         Self {
             context,
             payload: Payload::I8(default),
         }
     }
 
-    pub fn i16(context: MoveQueryContext) -> Self {
+    pub fn i16(context: MoveContext) -> Self {
         Self {
             context,
             payload: Payload::I16(0),
         }
     }
 
-    pub fn i16_with_default(context: MoveQueryContext, default: i16) -> Self {
+    pub fn i16_with_default(context: MoveContext, default: i16) -> Self {
         Self {
             context,
             payload: Payload::I16(default),
         }
     }
 
-    pub fn i32(context: MoveQueryContext) -> Self {
+    pub fn i32(context: MoveContext) -> Self {
         Self {
             context,
             payload: Payload::I32(0),
         }
     }
 
-    pub fn i32_with_default(context: MoveQueryContext, default: i32) -> Self {
+    pub fn i32_with_default(context: MoveContext, default: i32) -> Self {
         Self {
             context,
             payload: Payload::I32(default),
         }
     }
 
-    pub fn i64(context: MoveQueryContext) -> Self {
+    pub fn i64(context: MoveContext) -> Self {
         Self {
             context,
             payload: Payload::I64(0),
         }
     }
 
-    pub fn i64_with_default(context: MoveQueryContext, default: i64) -> Self {
+    pub fn i64_with_default(context: MoveContext, default: i64) -> Self {
         Self {
             context,
             payload: Payload::I64(default),
         }
     }
 
-    pub fn f32(context: MoveQueryContext) -> Self {
+    pub fn f32(context: MoveContext) -> Self {
         Self {
             context,
             payload: Payload::F32(0.0),
         }
     }
 
-    pub fn f32_with_default(context: MoveQueryContext, default: f32) -> Self {
+    pub fn f32_with_default(context: MoveContext, default: f32) -> Self {
         Self {
             context,
             payload: Payload::F32(default),
         }
     }
 
-    pub fn f64(context: MoveQueryContext) -> Self {
+    pub fn f64(context: MoveContext) -> Self {
         Self {
             context,
             payload: Payload::F64(0.0),
         }
     }
 
-    pub fn f64_with_default(context: MoveQueryContext, default: f64) -> Self {
+    pub fn f64_with_default(context: MoveContext, default: f64) -> Self {
         Self {
             context,
             payload: Payload::F64(default),
         }
     }
 
-    pub fn vec_f32(context: MoveQueryContext) -> Self {
+    pub fn vec_f32(context: MoveContext) -> Self {
         Self {
             context,
             payload: Payload::VecF32(Vec::new()),
         }
     }
 
-    pub fn vec_f32_with_default(context: MoveQueryContext, default: Vec<f32>) -> Self {
+    pub fn vec_f32_with_default(context: MoveContext, default: Vec<f32>) -> Self {
         Self {
             context,
             payload: Payload::VecF32(default),
         }
     }
 
-    pub fn bool(context: MoveQueryContext) -> Self {
+    pub fn bool(context: MoveContext) -> Self {
         Self {
             context,
             payload: Payload::Bool(false),
         }
     }
 
-    pub fn bool_with_default(context: MoveQueryContext, default: bool) -> Self {
+    pub fn bool_with_default(context: MoveContext, default: bool) -> Self {
         Self {
             context,
             payload: Payload::Bool(default),

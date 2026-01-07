@@ -1,16 +1,18 @@
 use crate::{
     battle::state::BattleState,
+    common::context::MoveContext,
     core::{
         pokemove::move_name::MoveName,
         poketype::{effectiveness, pokemon_typing::PokemonTyping, poketype::PokeType},
         util::damage_utils,
     },
     dex::pokemove::move_dex,
-    query::{
-        payload::{MoveQueryContext, PayloadMoveQuery},
-        query::Query,
-        query_bus::QueryBus,
+    event::{
+        self,
+        event_queue::{self, EventQueue},
+        event_type::{Event, FaintEvent},
     },
+    query::{payload::PayloadMoveQuery, query::Query, query_bus::QueryBus},
 };
 
 pub struct BattleEngine;
@@ -21,31 +23,35 @@ impl BattleEngine {
     pub fn try_use_move(
         battle_state: &mut BattleState,
         query_bus: &QueryBus,
-        move_context: &MoveQueryContext,
+        move_context: &MoveContext,
+        event_queue: &mut EventQueue,
     ) {
         let can_execute = BattleEngine::check_move_execution(battle_state, query_bus, move_context);
 
         if can_execute {
-            BattleEngine::single_hit_execution(battle_state, query_bus, move_context);
+            BattleEngine::single_hit_execution(battle_state, query_bus, move_context, event_queue);
         }
     }
 
     fn single_hit_execution(
         battle_state: &mut BattleState,
         query_bus: &QueryBus,
-        move_context: &MoveQueryContext,
+        move_context: &MoveContext,
+        event_queue: &mut EventQueue,
     ) {
         let damage = BattleEngine::calculate_damage(battle_state, query_bus, move_context);
-        BattleEngine::deal_damage(battle_state, query_bus, move_context, damage);
+        BattleEngine::deal_damage(battle_state, query_bus, move_context, event_queue, damage);
     }
 
     pub fn deal_damage(
         battle_state: &mut BattleState,
         query_bus: &QueryBus,
-        move_context: &MoveQueryContext,
+        move_context: &MoveContext,
+        event_queue: &mut EventQueue,
         damage: u32,
     ) {
-        let mut final_damage_query = Query::FinalDamage(PayloadMoveQuery::u32(*move_context));
+        let mut final_damage_query =
+            Query::FinalDamage(PayloadMoveQuery::u32_with_default(*move_context, damage));
         query_bus.query(&mut final_damage_query, battle_state);
 
         let final_damage = final_damage_query.into_payload_move_query().get_u32();
@@ -54,14 +60,18 @@ impl BattleEngine {
             .take_damage(final_damage);
 
         if caused_faint {
-            // Handle fainting logic
+            let faint_event = Event::Faint(FaintEvent {
+                move_context: Some(*move_context),
+                trainer_side: move_context.target_trainer,
+            });
+            event_queue.add_event(faint_event);
         }
     }
 
     fn calculate_damage(
         battle_state: &mut BattleState,
         query_bus: &QueryBus,
-        move_context: &MoveQueryContext,
+        move_context: &MoveContext,
     ) -> u32 {
         let mut base_power_query = Query::OnBasePower(PayloadMoveQuery::vec_f32(*move_context));
         query_bus.query(&mut base_power_query, battle_state);
@@ -145,7 +155,7 @@ impl BattleEngine {
     fn check_move_execution(
         battle_state: &mut BattleState,
         query_bus: &QueryBus,
-        move_context: &MoveQueryContext,
+        move_context: &MoveContext,
     ) -> bool {
         let mut invuln_query =
             Query::CheckInvulnerability(PayloadMoveQuery::bool_with_default(*move_context, true));
