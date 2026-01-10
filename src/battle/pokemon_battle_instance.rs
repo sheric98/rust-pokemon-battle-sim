@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     core::{
         pokemon::{pokemon::Pokemon, stat_enum::StatEnum},
-        status::volatile_status::VolatileStatus,
+        status::{status::Status, volatile_status::VolatileStatus},
     },
     dex::{ability::ability_handlers, combined_handler::CombinedHandler},
 };
@@ -14,6 +14,7 @@ use crate::{
 #[derive(Clone, Serialize)]
 pub struct PokemonBattleInstance {
     pub pokemon: Pokemon,
+    pub status: Option<Status>,
     pub volatile_statuses: Vec<VolatileStatus>,
     #[serde(skip)]
     pub boosts: EnumMap<StatEnum, i8>,
@@ -33,6 +34,7 @@ impl PokemonBattleInstance {
 
         Self {
             pokemon,
+            status: None,
             volatile_statuses: vec![],
             boosts: EnumMap::default(),
 
@@ -40,6 +42,17 @@ impl PokemonBattleInstance {
             status_handler: None,
 
             volatile_status_handlers: vec![],
+        }
+    }
+
+    pub fn set_fainted(&mut self) {
+        self.status = Some(Status::Faint);
+    }
+
+    pub fn is_fainted(&self) -> bool {
+        match self.status {
+            Some(Status::Faint) => true,
+            _ => false,
         }
     }
 

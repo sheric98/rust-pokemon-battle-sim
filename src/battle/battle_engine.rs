@@ -1,5 +1,5 @@
 use crate::{
-    battle::state::BattleState,
+    battle::{state::BattleState, turn_state::TurnState},
     common::context::MoveContext,
     core::{
         pokemove::move_name::MoveName,
@@ -25,11 +25,18 @@ impl BattleEngine {
         query_bus: &QueryBus,
         move_context: &MoveContext,
         event_queue: &mut EventQueue,
+        turn_state: &mut TurnState,
     ) {
         let can_execute = BattleEngine::check_move_execution(battle_state, query_bus, move_context);
 
         if can_execute {
-            BattleEngine::single_hit_execution(battle_state, query_bus, move_context, event_queue);
+            BattleEngine::single_hit_execution(
+                battle_state,
+                query_bus,
+                move_context,
+                event_queue,
+                turn_state,
+            );
         }
     }
 
@@ -38,9 +45,17 @@ impl BattleEngine {
         query_bus: &QueryBus,
         move_context: &MoveContext,
         event_queue: &mut EventQueue,
+        turn_state: &mut TurnState,
     ) {
         let damage = BattleEngine::calculate_damage(battle_state, query_bus, move_context);
-        BattleEngine::deal_damage(battle_state, query_bus, move_context, event_queue, damage);
+        BattleEngine::deal_damage(
+            battle_state,
+            query_bus,
+            move_context,
+            event_queue,
+            turn_state,
+            damage,
+        );
     }
 
     pub fn deal_damage(
@@ -48,6 +63,7 @@ impl BattleEngine {
         query_bus: &QueryBus,
         move_context: &MoveContext,
         event_queue: &mut EventQueue,
+        turn_state: &mut TurnState,
         damage: u32,
     ) {
         let mut final_damage_query =
@@ -65,6 +81,10 @@ impl BattleEngine {
                 trainer_side: move_context.target_trainer,
             });
             event_queue.add_event(faint_event);
+            battle_state
+                .get_active_pokemon_mut(move_context.target_trainer)
+                .set_fainted();
+            turn_state.record_faint(move_context.target_trainer);
         }
     }
 

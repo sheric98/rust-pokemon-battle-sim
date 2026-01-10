@@ -54,7 +54,7 @@ impl BattleState {
             .expect("Unexpected action for move")
     }
 
-    fn get_side(&self, trainer_1: bool) -> &SingleSideState {
+    pub fn get_side(&self, trainer_1: bool) -> &SingleSideState {
         if trainer_1 {
             self.trainer_1_state.as_ref().unwrap()
         } else {
@@ -109,5 +109,9 @@ impl SingleSideState {
             active_pokemon.pokemon.hp -= damage as u16;
             false
         }
+    }
+
+    pub fn out_of_usable_pokemon(&self) -> bool {
+        self.pokemon.iter().all(|p| p.is_fainted())
     }
 }

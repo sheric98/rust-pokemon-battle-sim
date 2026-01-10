@@ -1,5 +1,5 @@
 pub enum SingleBattleRequest {
-    SwitchInRequest(bool), // trainer_side
+    SwitchInRequest,
     ActionRequest,
 }
 

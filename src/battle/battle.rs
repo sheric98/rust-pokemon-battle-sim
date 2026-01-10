@@ -5,9 +5,10 @@ use crate::{
     battle::{
         battle_engine::BattleEngine,
         battle_input::{BattleInput, SingleInput},
-        battle_request::{ActionResponse, BattleRequest},
+        battle_request::{ActionResponse, BattleRequest, SingleBattleRequest},
         state::BattleState,
         static_battle_handler::StaticBattleHandler,
+        turn_state::TurnState,
     },
     common::context::MoveContext,
     core::{
@@ -72,23 +73,35 @@ impl Battle {
         self.event_bus
             .publish(&Event::BeginTurn, &mut self.battle_state);
         let action1_first = self.resolve_action_order(&action1, &action2);
+        let mut turn_state = TurnState::new();
 
         if action1_first {
-            self.process_action(true, &action1);
-            self.process_action(false, &action2);
+            self.process_action(true, &action1, &mut turn_state);
+            // TODO: Handle mid-turn switch e.g. U-Turn
+            if !self.battle_state.get_active_pokemon(false).is_fainted() {
+                self.process_action(false, &action2, &mut turn_state);
+            }
         } else {
-            self.process_action(false, &action2);
-            self.process_action(true, &action1);
+            self.process_action(false, &action2, &mut turn_state);
+            // TODO: Handle mid-turn switch e.g. U-Turn
+            if !self.battle_state.get_active_pokemon(true).is_fainted() {
+                self.process_action(true, &action1, &mut turn_state);
+            }
         }
 
-        todo!("Return appropriate BattleRequest after processing actions")
+        self.generate_battle_request_from_turn_state(&turn_state)
     }
 
-    fn process_action(&mut self, is_trainer_1: bool, action: &Action) -> ActionResponse {
+    fn process_action(
+        &mut self,
+        is_trainer_1: bool,
+        action: &Action,
+        turn_state: &mut TurnState,
+    ) -> ActionResponse {
         if action.is_switch() {
             // Handle switch action
             // This is a placeholder for actual switch logic
-            todo!("Handle switch action")
+            ActionResponse::Continue
         } else {
             let move_name = self
                 .battle_state
@@ -100,8 +113,9 @@ impl Battle {
                 &self.query_bus,
                 &move_context,
                 &mut self.event_bus.event_queue,
+                turn_state,
             );
-            todo!("Return appropriate ActionResponse after move execution")
+            ActionResponse::Continue
         }
     }
 
@@ -161,6 +175,54 @@ impl Battle {
             },
             move_name,
             pokemove,
+        }
+    }
+
+    fn generate_battle_request_from_turn_state(&self, turn_state: &TurnState) -> BattleRequest {
+        match turn_state.fainted_sides.as_slice() {
+            [] => BattleRequest::Request(
+                Some(SingleBattleRequest::ActionRequest),
+                Some(SingleBattleRequest::ActionRequest),
+            ),
+            [true] => {
+                if self.battle_state.get_side(true).out_of_usable_pokemon() {
+                    BattleRequest::BattleEnded(true)
+                } else {
+                    BattleRequest::Request(Some(SingleBattleRequest::SwitchInRequest), None)
+                }
+            }
+            [false] => {
+                if self.battle_state.get_side(false).out_of_usable_pokemon() {
+                    BattleRequest::BattleEnded(false)
+                } else {
+                    BattleRequest::Request(None, Some(SingleBattleRequest::SwitchInRequest))
+                }
+            }
+            [true, false] => {
+                if self.battle_state.get_side(true).out_of_usable_pokemon() {
+                    BattleRequest::BattleEnded(true)
+                } else if self.battle_state.get_side(false).out_of_usable_pokemon() {
+                    BattleRequest::BattleEnded(false)
+                } else {
+                    BattleRequest::Request(
+                        Some(SingleBattleRequest::SwitchInRequest),
+                        Some(SingleBattleRequest::SwitchInRequest),
+                    )
+                }
+            }
+            [false, true] => {
+                if self.battle_state.get_side(false).out_of_usable_pokemon() {
+                    BattleRequest::BattleEnded(false)
+                } else if self.battle_state.get_side(true).out_of_usable_pokemon() {
+                    BattleRequest::BattleEnded(true)
+                } else {
+                    BattleRequest::Request(
+                        Some(SingleBattleRequest::SwitchInRequest),
+                        Some(SingleBattleRequest::SwitchInRequest),
+                    )
+                }
+            }
+            _ => panic!("Unexpected turn state fainted sides"),
         }
     }
 }

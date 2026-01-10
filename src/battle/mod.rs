@@ -6,3 +6,4 @@ pub mod battle_request;
 pub mod pokemon_battle_instance;
 pub mod state;
 pub mod static_battle_handler;
+pub mod turn_state;
