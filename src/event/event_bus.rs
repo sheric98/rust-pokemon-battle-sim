@@ -32,6 +32,12 @@ impl EventBus {
         }
     }
 
+    pub fn drain_event_queue(&mut self, battle_state: &mut BattleState) {
+        while let Some(event) = self.event_queue.dequeue() {
+            self.publish(&event, battle_state);
+        }
+    }
+
     fn process_event_effects(
         &mut self,
         effects: Vec<EventHandlerEffect>,

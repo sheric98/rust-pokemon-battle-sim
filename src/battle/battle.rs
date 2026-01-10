@@ -3,6 +3,7 @@ use std::sync::Arc;
 use super::actions::Action;
 use crate::{
     battle::{
+        battle_context::BattleContext,
         battle_engine::BattleEngine,
         battle_input::{BattleInput, SingleInput},
         battle_request::{ActionResponse, BattleRequest, SingleBattleRequest},
@@ -101,22 +102,17 @@ impl Battle {
         if action.is_switch() {
             // Handle switch action
             // This is a placeholder for actual switch logic
-            ActionResponse::Continue
         } else {
             let move_name = self
                 .battle_state
                 .get_move_for_move_action(is_trainer_1, &action);
             let move_context = Battle::create_move_context(move_name, is_trainer_1);
 
-            BattleEngine::try_use_move(
-                &mut self.battle_state,
-                &self.query_bus,
-                &move_context,
-                &mut self.event_bus.event_queue,
-                turn_state,
-            );
-            ActionResponse::Continue
+            BattleEngine::try_use_move(&mut self.battle_context(), &move_context, turn_state);
         }
+
+        self.event_bus.drain_event_queue(&mut self.battle_state);
+        ActionResponse::Continue
     }
 
     // true is action1 goes first, false is action2 goes first
@@ -223,6 +219,15 @@ impl Battle {
                 }
             }
             _ => panic!("Unexpected turn state fainted sides"),
+        }
+    }
+
+    fn battle_context(&mut self) -> BattleContext {
+        BattleContext {
+            battle_state: &mut self.battle_state,
+            query_bus: &mut self.query_bus,
+            event_queue: &mut self.event_bus.event_queue,
+            event_registry: &mut self.event_bus.registry,
         }
     }
 }
