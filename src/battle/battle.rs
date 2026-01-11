@@ -3,6 +3,7 @@ use std::sync::Arc;
 use super::actions::Action;
 use crate::{
     battle::{
+        actions::SwitchSlot,
         battle_context::BattleContext,
         battle_engine::BattleEngine,
         battle_input::{BattleInput, SingleInput},
@@ -48,6 +49,15 @@ impl Battle {
             event_bus,
             query_bus,
         }
+    }
+
+    pub fn start_battle(&mut self) {
+        let first_trainer = self.resolve_action_order(
+            &Action::Switch(SwitchSlot::Slot0),
+            &Action::Switch(SwitchSlot::Slot0),
+        );
+        BattleEngine::switch_in_pokemon(&mut self.battle_context(), first_trainer, 0);
+        BattleEngine::switch_in_pokemon(&mut self.battle_context(), !first_trainer, 0);
     }
 
     pub fn process_input(&mut self, input: BattleInput) -> BattleRequest {
@@ -100,8 +110,11 @@ impl Battle {
         turn_state: &mut TurnState,
     ) -> ActionResponse {
         if action.is_switch() {
-            // Handle switch action
-            // This is a placeholder for actual switch logic
+            BattleEngine::switch_pokemon(
+                &mut self.battle_context(),
+                is_trainer_1,
+                action.get_switch_index(),
+            );
         } else {
             let move_name = self
                 .battle_state

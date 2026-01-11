@@ -1,7 +1,13 @@
 use crate::{
-    battle::{battle_context::BattleContext, state::BattleState, turn_state::TurnState},
-    common::context::MoveContext,
+    battle::{
+        battle_context::BattleContext,
+        pokemon_battle_instance::{self, PokemonBattleInstance},
+        state::BattleState,
+        turn_state::TurnState,
+    },
+    common::{context::MoveContext, registry::Registry},
     core::{
+        pokemon,
         pokemove::move_name::MoveName,
         poketype::{effectiveness, pokemon_typing::PokemonTyping, poketype::PokeType},
         util::damage_utils,
@@ -9,16 +15,35 @@ use crate::{
     dex::pokemove::move_dex,
     event::{
         self,
+        event_handler::EventHandler,
         event_queue::{self, EventQueue},
         event_type::{Event, FaintEvent},
     },
-    query::{payload::PayloadMoveQuery, query::Query, query_bus::QueryBus},
+    query::{
+        payload::PayloadMoveQuery, query::Query, query_bus::QueryBus, query_handler::QueryHandler,
+    },
 };
 
 pub struct BattleEngine;
 
 impl BattleEngine {
-    pub fn switch_pokemon(battle_context: &mut BattleContext, trainer: bool, switch_idx: usize) {}
+    pub fn switch_pokemon(battle_context: &mut BattleContext, trainer: bool, switch_idx: usize) {
+        BattleEngine::switch_out_pokemon(battle_context, trainer, switch_idx);
+        BattleEngine::switch_in_pokemon(battle_context, trainer, switch_idx);
+    }
+
+    pub fn switch_in_pokemon(battle_context: &mut BattleContext, trainer: bool, switch_idx: usize) {
+        let pokemon_battle_instance = battle_context
+            .battle_state
+            .get_side_mut(trainer)
+            .set_active_pokemon(switch_idx);
+
+        BattleEngine::register_handlers_for_pokemon(
+            &mut battle_context.event_registry,
+            &mut battle_context.query_bus.registry,
+            pokemon_battle_instance,
+        );
+    }
 
     pub fn try_use_move(
         battle_context: &mut BattleContext,
@@ -204,5 +229,36 @@ impl BattleEngine {
         }
 
         true
+    }
+
+    fn switch_out_pokemon(battle_context: &mut BattleContext, trainer: bool, switch_idx: usize) {
+        let pokemon_battle_instance = battle_context
+            .battle_state
+            .get_side_mut(trainer)
+            .get_active_pokemon();
+
+        BattleEngine::unregister_handlers_for_pokemon(
+            &mut battle_context.event_registry,
+            &mut battle_context.query_bus.registry,
+            pokemon_battle_instance,
+        );
+    }
+
+    fn register_handlers_for_pokemon(
+        event_registry: &mut Registry<Event, dyn EventHandler>,
+        query_registry: &mut Registry<Query, dyn QueryHandler>,
+        pokemon_battle_instance: &PokemonBattleInstance,
+    ) {
+        event_registry.add_handlers(pokemon_battle_instance.get_all_event_handlers());
+        query_registry.add_handlers(pokemon_battle_instance.get_all_query_handlers());
+    }
+
+    fn unregister_handlers_for_pokemon(
+        event_registry: &mut Registry<Event, dyn EventHandler>,
+        query_registry: &mut Registry<Query, dyn QueryHandler>,
+        pokemon_battle_instance: &PokemonBattleInstance,
+    ) {
+        event_registry.remove_handlers(pokemon_battle_instance.get_all_event_handlers());
+        query_registry.remove_handlers(pokemon_battle_instance.get_all_query_handlers());
     }
 }

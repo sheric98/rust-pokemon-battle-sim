@@ -29,4 +29,18 @@ impl Action {
     pub fn is_switch(&self) -> bool {
         matches!(self, Action::Switch(_))
     }
+
+    pub fn get_switch_index(&self) -> usize {
+        match self {
+            Action::Switch(slot) => match slot {
+                SwitchSlot::Slot0 => 0,
+                SwitchSlot::Slot1 => 1,
+                SwitchSlot::Slot2 => 2,
+                SwitchSlot::Slot3 => 3,
+                SwitchSlot::Slot4 => 4,
+                SwitchSlot::Slot5 => 5,
+            },
+            _ => panic!("Called get_switch_index on a non-switch action"),
+        }
+    }
 }

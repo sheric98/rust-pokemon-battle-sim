@@ -99,6 +99,11 @@ impl SingleSideState {
         &mut self.pokemon[self.active_pokemon_idx]
     }
 
+    pub fn set_active_pokemon(&mut self, idx: usize) -> &PokemonBattleInstance {
+        self.active_pokemon_idx = idx;
+        self.get_active_pokemon()
+    }
+
     // Returns true if the active Pokemon fainted
     pub fn take_damage(&mut self, damage: u32) -> bool {
         let active_pokemon = self.get_active_pokemon_mut();

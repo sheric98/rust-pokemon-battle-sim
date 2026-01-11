@@ -9,6 +9,8 @@ use crate::{
         status::{status::Status, volatile_status::VolatileStatus},
     },
     dex::{ability::ability_handlers, combined_handler::CombinedHandler},
+    event::event_handler::EventHandler,
+    query::query_handler::QueryHandler,
 };
 
 #[derive(Clone, Serialize)]
@@ -61,5 +63,37 @@ impl PokemonBattleInstance {
         self.volatile_status_handlers.clear();
 
         self.boosts.clear();
+    }
+
+    pub fn get_all_event_handlers(&self) -> Vec<Arc<dyn EventHandler>> {
+        let mut handlers: Vec<Arc<dyn EventHandler>> = vec![];
+
+        handlers.push(self.ability_handler.clone());
+
+        if let Some(status_handler) = &self.status_handler {
+            handlers.push(status_handler.clone());
+        }
+
+        for volatile_status_handler in &self.volatile_status_handlers {
+            handlers.push(volatile_status_handler.clone());
+        }
+
+        handlers
+    }
+
+    pub fn get_all_query_handlers(&self) -> Vec<Arc<dyn QueryHandler>> {
+        let mut handlers: Vec<Arc<dyn QueryHandler>> = vec![];
+
+        handlers.push(self.ability_handler.clone());
+
+        if let Some(status_handler) = &self.status_handler {
+            handlers.push(status_handler.clone());
+        }
+
+        for volatile_status_handler in &self.volatile_status_handlers {
+            handlers.push(volatile_status_handler.clone());
+        }
+
+        handlers
     }
 }
