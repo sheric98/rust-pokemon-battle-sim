@@ -8,7 +8,7 @@ use crate::{
         pokemon::{pokemon::Pokemon, stat_enum::StatEnum},
         status::{status::Status, volatile_status::VolatileStatus},
     },
-    dex::{ability::ability_handlers, combined_handler::CombinedHandler},
+    dex::{ability::ability_handlers, combined_handler::CombinedHandler, status::status_handlers},
     event::event_handler::EventHandler,
     query::query_handler::QueryHandler,
 };
@@ -18,6 +18,7 @@ pub struct PokemonBattleInstance {
     pub pokemon: Pokemon,
     pub status: Option<Status>,
     pub volatile_statuses: Vec<VolatileStatus>,
+    pub trainer_side: bool,
     #[serde(skip)]
     pub boosts: EnumMap<StatEnum, i8>,
 
@@ -36,6 +37,7 @@ impl PokemonBattleInstance {
 
         Self {
             pokemon,
+            trainer_side,
             status: None,
             volatile_statuses: vec![],
             boosts: EnumMap::default(),
@@ -45,6 +47,14 @@ impl PokemonBattleInstance {
 
             volatile_status_handlers: vec![],
         }
+    }
+
+    pub fn set_status(&mut self, status: Status) {
+        self.status = Some(status);
+        self.status_handler = Some(status_handlers::get_status_handler(
+            status,
+            self.trainer_side,
+        ));
     }
 
     pub fn set_fainted(&mut self) {

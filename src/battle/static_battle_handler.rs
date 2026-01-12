@@ -35,7 +35,7 @@ impl QueryHandler for StaticBattleHandler {
     fn handle(
         &self,
         query: &mut crate::query::query::Query,
-        battle_state: &crate::battle::state::BattleState,
+        battle_state: &mut crate::battle::state::BattleState,
     ) {
         match query {
             Query::OnBasePower(payload) => {

@@ -46,18 +46,22 @@ where
         });
     }
 
+    pub fn remove_handler(&mut self, handler: Arc<U>) {
+        handler
+            .as_ref()
+            .subscriptions()
+            .iter()
+            .for_each(|event_kind| {
+                if let Some(subscribers) = self.subscribers.get_mut(event_kind) {
+                    subscribers.retain(|s| !Arc::ptr_eq(s, &handler));
+                }
+            });
+    }
+
     // TODO: Evaluate if this is the best way to remove handlers
     pub fn remove_handlers(&mut self, handlers: Vec<Arc<U>>) {
         for handler in handlers {
-            handler
-                .as_ref()
-                .subscriptions()
-                .iter()
-                .for_each(|event_kind| {
-                    if let Some(subscribers) = self.subscribers.get_mut(event_kind) {
-                        subscribers.retain(|s| !Arc::ptr_eq(s, &handler));
-                    }
-                });
+            self.remove_handler(handler);
         }
     }
 }

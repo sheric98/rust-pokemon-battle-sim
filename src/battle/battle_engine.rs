@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     battle::{
         battle_context::BattleContext,
@@ -10,9 +12,10 @@ use crate::{
         pokemon,
         pokemove::move_name::MoveName,
         poketype::{effectiveness, pokemon_typing::PokemonTyping, poketype::PokeType},
+        status::status::Status,
         util::damage_utils,
     },
-    dex::pokemove::move_dex,
+    dex::{combined_handler::CombinedHandler, pokemove::move_dex},
     event::{
         self,
         event_handler::EventHandler,
@@ -95,6 +98,56 @@ impl BattleEngine {
                 .get_active_pokemon_mut(move_context.target_trainer)
                 .set_fainted();
             turn_state.record_faint(move_context.target_trainer);
+        }
+    }
+
+    pub fn set_status(
+        battle_context: &mut BattleContext,
+        move_context: &MoveContext,
+        status: Status,
+    ) {
+        let mut can_apply_status_query =
+            Query::CanApplyStatus(PayloadMoveQuery::bool(*move_context));
+        battle_context
+            .query_bus
+            .query(&mut can_apply_status_query, battle_context.battle_state);
+        if !can_apply_status_query.into_payload_move_query().get_bool() {
+            return;
+        }
+
+        let prev_status_handler = &battle_context
+            .battle_state
+            .get_active_pokemon(move_context.target_trainer)
+            .status_handler;
+        match prev_status_handler {
+            Some(handler) => {
+                BattleEngine::unregister_handler(
+                    &handler,
+                    &mut battle_context.event_registry,
+                    &mut battle_context.query_bus.registry,
+                );
+            }
+            None => {}
+        }
+
+        battle_context
+            .battle_state
+            .get_active_pokemon_mut(move_context.target_trainer)
+            .set_status(status);
+
+        let new_status_handler = &battle_context
+            .battle_state
+            .get_active_pokemon(move_context.target_trainer)
+            .status_handler;
+        match new_status_handler {
+            Some(handler) => {
+                BattleEngine::register_handler(
+                    &handler,
+                    &mut battle_context.event_registry,
+                    &mut battle_context.query_bus.registry,
+                );
+            }
+            None => panic!("Status handler should be set after setting status"),
         }
     }
 
@@ -260,5 +313,23 @@ impl BattleEngine {
     ) {
         event_registry.remove_handlers(pokemon_battle_instance.get_all_event_handlers());
         query_registry.remove_handlers(pokemon_battle_instance.get_all_query_handlers());
+    }
+
+    fn register_handler(
+        handler: &Arc<dyn CombinedHandler>,
+        event_registry: &mut Registry<Event, dyn EventHandler>,
+        query_registry: &mut Registry<Query, dyn QueryHandler>,
+    ) {
+        event_registry.add_handler(handler.clone());
+        query_registry.add_handler(handler.clone());
+    }
+
+    fn unregister_handler(
+        handler: &Arc<dyn CombinedHandler>,
+        event_registry: &mut Registry<Event, dyn EventHandler>,
+        query_registry: &mut Registry<Query, dyn QueryHandler>,
+    ) {
+        event_registry.remove_handler(handler.clone());
+        query_registry.remove_handler(handler.clone());
     }
 }
