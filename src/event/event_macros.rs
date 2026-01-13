@@ -68,7 +68,7 @@ macro_rules! impl_empty_event_handler {
             fn handle(
                 &self,
                 _: &crate::event::event_type::Event,
-                _: &crate::battle::state::BattleState,
+                _: &mut crate::battle::state::BattleState,
             ) -> Vec<crate::event::event_handler_effect::EventHandlerEffect> {
                 panic!("Event not handled")
             }

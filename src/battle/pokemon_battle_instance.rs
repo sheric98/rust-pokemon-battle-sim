@@ -19,6 +19,8 @@ pub struct PokemonBattleInstance {
     pub status: Option<Status>,
     pub volatile_statuses: Vec<VolatileStatus>,
     pub trainer_side: bool,
+    pub sleep_turns: u8,
+    pub badly_poison_turns: u8,
     #[serde(skip)]
     pub boosts: EnumMap<StatEnum, i8>,
 
@@ -39,6 +41,8 @@ impl PokemonBattleInstance {
             pokemon,
             trainer_side,
             status: None,
+            sleep_turns: 0,
+            badly_poison_turns: 0,
             volatile_statuses: vec![],
             boosts: EnumMap::default(),
 

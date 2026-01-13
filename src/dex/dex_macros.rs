@@ -45,7 +45,7 @@ macro_rules! handler {
         }
 
         impl crate::event::event_handler::EventHandler for $name {
-            fn handle(&self, event: &crate::event::event_type::Event, state: &crate::battle::state::BattleState) -> Vec<crate::event::event_handler_effect::EventHandlerEffect> {
+            fn handle(&self, event: &crate::event::event_type::Event, state: &mut crate::battle::state::BattleState) -> Vec<crate::event::event_handler_effect::EventHandlerEffect> {
                 let $state_var = state;
                 let $self = self;
                 match event {
@@ -104,12 +104,64 @@ macro_rules! handler {
 
     // only events
     (
-        $name:ident {
-            events { $( $event:expr ),* $(,)? }
+        $name:ident ( $self:ident, $state_var:tt ) {
+            events {
+                $(
+                    $variant_e:ident $( ( $($pat_e:tt)* ) )? $([priority = $priority_e:expr])? => $handler_e:block
+                ),* $(,)?
+            }
         }
     ) => {
-        struct $name;
-        crate::impl_event_handler!($name, $( $event ),*);
+        struct $name {
+            trainer_side: bool,
+        }
+
+        impl $name {
+            pub fn new(trainer_side: bool) -> Self {
+                Self {
+                    trainer_side,
+                }
+            }
+        }
+
+        impl crate::dex::combined_handler::CombinedHandler for $name {}
+
+        impl crate::event::event_handler::EventHandler for $name {
+            fn handle(&self, event: &crate::event::event_type::Event, state: &mut crate::battle::state::BattleState) -> Vec<crate::event::event_handler_effect::EventHandlerEffect> {
+                let $state_var = state;
+                let $self = self;
+                match event {
+                    $(
+                        crate::event::event_type::Event::$variant_e $( ( $($pat_e)* ) )? => {
+                            $handler_e
+                        }
+                    )*
+                    _ => panic!("Event not handled"),
+                }
+            }
+        }
+
+        impl crate::common::subscriber::Subscriber<crate::event::event_type::Event> for $name {
+            fn subscriptions(&self) -> &'static [crate::event::event_type::EventKind] {
+                &[
+                    $(
+                        {
+                            crate::event::event_type::EventKind::$variant_e
+                        }
+                    ),*
+                ]
+            }
+
+            fn priority(&self, kind: &crate::event::event_type::EventKind) -> i32 {
+                match kind {
+                    $(
+                        crate::event::event_type::EventKind::$variant_e => crate::__priority!($([priority = $priority_e])?),
+                    )*
+                    _ => panic!("Event priority for unhandled event")
+                }
+            }
+        }
+
         crate::impl_empty_query_handler!($name);
     };
 

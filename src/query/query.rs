@@ -113,6 +113,8 @@ pub struct TryUseMoveQuery {
     pub move_context: MoveContext,
     pub should_cancel: bool,
     pub confuse_self: bool,
+    pub wake_sleep: bool,
+    pub unfreeze: bool,
 }
 
 impl TryUseMoveQuery {
@@ -121,6 +123,8 @@ impl TryUseMoveQuery {
             move_context,
             should_cancel: false,
             confuse_self: false,
+            wake_sleep: false,
+            unfreeze: false,
         }
     }
 }

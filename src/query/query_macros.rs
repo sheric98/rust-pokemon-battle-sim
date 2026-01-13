@@ -98,18 +98,22 @@ macro_rules! impl_query_handler {
 #[macro_export]
 macro_rules! impl_empty_query_handler {
     ($name:ident) => {
-        impl QueryHandler for $name {
-            fn handle(&self, _: &Query, _: &BattleState) {
+        impl crate::query::query_handler::QueryHandler for $name {
+            fn handle(
+                &self,
+                _: &mut crate::query::query::Query,
+                _: &mut crate::battle::state::BattleState,
+            ) {
                 panic!("Query not handled")
             }
         }
 
-        impl Subscriber<Query> for $name {
-            fn subscriptions(&self) -> &'static [QueryKind] {
+        impl crate::common::subscriber::Subscriber<crate::query::query::Query> for $name {
+            fn subscriptions(&self) -> &'static [crate::query::query::QueryKind] {
                 &[]
             }
 
-            fn priority(&self, kind: QueryKind) -> i32 {
+            fn priority(&self, _: &crate::query::query::QueryKind) -> i32 {
                 panic!("Query priority for unhandled query")
             }
         }
