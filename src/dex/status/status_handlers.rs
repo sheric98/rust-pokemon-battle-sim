@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
 use crate::{
-    core::{pokemove::move_category::MoveCategory, status::status::Status},
+    core::{
+        pokemon::stat_enum::StatEnum, pokemove::move_category::MoveCategory, status::status::Status,
+    },
     dex::combined_handler::CombinedHandler,
     event::event_handler_effect::EventHandlerEffect,
     handler,
@@ -45,13 +47,13 @@ handler!(ParalyzeHandler ( s, state ) {
             let should_cancel = state.get_random_check(1, 4);
             payload.should_cancel = should_cancel;
         },
-        OnSpd( payload ) [priority=1] => {
-            let src_trainer = payload.context.src_trainer;
-            if src_trainer != s.trainer_side {
+        OnStat( payload ) [priority=1] => {
+            let src_trainer = payload.trainer;
+            if src_trainer != s.trainer_side || payload.stat != StatEnum::Speed {
                 return;
             }
 
-            payload.get_vec_f32().push(0.5);
+            payload.mults.push(0.5);
         }
     }
 });

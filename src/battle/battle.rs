@@ -14,7 +14,7 @@ use crate::{
     },
     common::context::MoveContext,
     core::{
-        pokemon::pokemon::Pokemon,
+        pokemon::{pokemon::Pokemon, stat_enum::StatEnum},
         pokemove::{move_name::MoveName, move_target::MoveTarget},
         poketype::{effectiveness, poketype::PokeType},
         util::damage_utils,
@@ -130,34 +130,43 @@ impl Battle {
 
     // true is action1 goes first, false is action2 goes first
     fn resolve_action_order(&mut self, action1: &Action, action2: &Action) -> bool {
-        let priority1 = self.get_action_priority(true, action1);
-        let priority2 = self.get_action_priority(false, action2);
+        let mut battle_context = self.battle_context();
+        let priority1 = Self::get_action_priority(&mut battle_context, true, action1);
+        let priority2 = Self::get_action_priority(&mut battle_context, false, action2);
 
         if priority1 > priority2 {
             true
         } else if priority2 > priority1 {
             false
         } else {
-            let speed1 = self.battle_state.get_active_pokemon(true).pokemon.speed;
-            let speed2 = self.battle_state.get_active_pokemon(false).pokemon.speed;
+            let speed1 =
+                BattleEngine::get_effective_stat_value(&mut battle_context, true, StatEnum::Speed);
+            let speed2 =
+                BattleEngine::get_effective_stat_value(&mut battle_context, false, StatEnum::Speed);
             if speed1 > speed2 {
                 true
             } else if speed2 > speed1 {
                 false
             } else {
-                self.battle_state.get_random_check(1, 2)
+                battle_context.battle_state.get_random_check(1, 2)
             }
         }
     }
 
-    fn get_action_priority(&mut self, is_trainer_1: bool, action: &Action) -> i8 {
-        let move1_option = self.battle_state.get_move_for_action(is_trainer_1, action);
+    fn get_action_priority(
+        battle_context: &mut BattleContext,
+        is_trainer_1: bool,
+        action: &Action,
+    ) -> i8 {
+        let move1_option = battle_context
+            .battle_state
+            .get_move_for_action(is_trainer_1, action);
 
-        self.get_move_priority(move1_option, action, is_trainer_1)
+        Self::get_move_priority(battle_context, move1_option, action, is_trainer_1)
     }
 
     fn get_move_priority(
-        &mut self,
+        battle_context: &mut BattleContext,
         optional_move: Option<MoveName>,
         action: &Action,
         is_trainer_1: bool,
@@ -168,8 +177,9 @@ impl Battle {
             let move_name = optional_move.expect("Expected a move for non-switch action");
             let context = Battle::create_move_context(move_name, is_trainer_1);
             let mut priority_query = Query::OnPriority(PayloadMoveQuery::i8(context));
-            self.query_bus
-                .query(&mut priority_query, &mut self.battle_state);
+            battle_context
+                .query_bus
+                .query(&mut priority_query, battle_context.battle_state);
             priority_query.into_payload_move_query().get_i8()
         }
     }

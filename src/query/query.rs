@@ -1,14 +1,13 @@
 use crate::{
     common::{context::MoveContext, has_kind::HasKind},
+    core::pokemon::stat_enum::StatEnum,
     query::payload::PayloadMoveQuery,
 };
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]
 pub enum QueryKind {
-    OnSpd,
+    OnStat,
     OnBasePower,
-    OnAtk,
-    OnDef,
     OnMod1,
     OnMod2,
     OnMod3,
@@ -21,16 +20,16 @@ pub enum QueryKind {
     GetDeductPP,
     CheckInvulnerability,
     CheckImmunity,
-    TryHit,
+    GetMoveHitChance,
     FinalDamage,
     CanApplyStatus,
+    MultiHitRange,
+    MultiHitHits,
 }
 
 pub enum Query {
-    OnSpd(PayloadMoveQuery),
+    OnStat(OnStatQuery),
     OnBasePower(PayloadMoveQuery),
-    OnAtk(PayloadMoveQuery),
-    OnDef(PayloadMoveQuery),
     OnMod1(PayloadMoveQuery),
     OnMod2(PayloadMoveQuery),
     OnMod3(PayloadMoveQuery),
@@ -43,9 +42,11 @@ pub enum Query {
     GetDeductPP(PayloadMoveQuery),
     CheckInvulnerability(PayloadMoveQuery),
     CheckImmunity(PayloadMoveQuery),
-    TryHit(PayloadMoveQuery),
+    GetMoveHitChance(PayloadMoveQuery),
     FinalDamage(PayloadMoveQuery),
     CanApplyStatus(PayloadMoveQuery),
+    MultiHitRange(MultiHitRangeQuery),
+    MultiHitHits(MultiHitHitsQuery),
 }
 
 impl HasKind for Query {
@@ -53,10 +54,8 @@ impl HasKind for Query {
 
     fn kind(&self) -> QueryKind {
         match self {
-            Query::OnSpd(_) => QueryKind::OnSpd,
+            Query::OnStat(_) => QueryKind::OnStat,
             Query::OnBasePower(_) => QueryKind::OnBasePower,
-            Query::OnAtk(_) => QueryKind::OnAtk,
-            Query::OnDef(_) => QueryKind::OnDef,
             Query::OnMod1(_) => QueryKind::OnMod1,
             Query::OnMod2(_) => QueryKind::OnMod2,
             Query::OnMod3(_) => QueryKind::OnMod3,
@@ -69,9 +68,11 @@ impl HasKind for Query {
             Query::GetDeductPP(_) => QueryKind::GetDeductPP,
             Query::CheckInvulnerability(_) => QueryKind::CheckInvulnerability,
             Query::CheckImmunity(_) => QueryKind::CheckImmunity,
-            Query::TryHit(_) => QueryKind::TryHit,
+            Query::GetMoveHitChance(_) => QueryKind::GetMoveHitChance,
             Query::FinalDamage(_) => QueryKind::FinalDamage,
             Query::CanApplyStatus(_) => QueryKind::CanApplyStatus,
+            Query::MultiHitRange(_) => QueryKind::MultiHitRange,
+            Query::MultiHitHits(_) => QueryKind::MultiHitHits,
         }
     }
 }
@@ -79,10 +80,7 @@ impl HasKind for Query {
 impl Query {
     pub fn into_payload_move_query(self) -> PayloadMoveQuery {
         match self {
-            Query::OnSpd(e) => e,
             Query::OnBasePower(e) => e,
-            Query::OnAtk(e) => e,
-            Query::OnDef(e) => e,
             Query::OnMod1(e) => e,
             Query::OnMod2(e) => e,
             Query::OnMod3(e) => e,
@@ -94,7 +92,7 @@ impl Query {
             Query::GetDeductPP(e) => e,
             Query::CheckInvulnerability(e) => e,
             Query::CheckImmunity(e) => e,
-            Query::TryHit(e) => e,
+            Query::GetMoveHitChance(e) => e,
             Query::FinalDamage(e) => e,
             Query::CanApplyStatus(e) => e,
             _ => panic!("Query is not a PayloadMoveQuery"),
@@ -105,6 +103,27 @@ impl Query {
         match self {
             Query::TryUseMove(e) => e,
             _ => panic!("Query is not a TryUseMoveQuery"),
+        }
+    }
+
+    pub fn into_on_stat_query(self) -> OnStatQuery {
+        match self {
+            Query::OnStat(e) => e,
+            _ => panic!("Query is not an OnStatQuery"),
+        }
+    }
+
+    pub fn into_multi_hit_range_query(self) -> MultiHitRangeQuery {
+        match self {
+            Query::MultiHitRange(e) => e,
+            _ => panic!("Query is not a MultiHitRangeQuery"),
+        }
+    }
+
+    pub fn into_multi_hit_hits_query(self) -> MultiHitHitsQuery {
+        match self {
+            Query::MultiHitHits(e) => e,
+            _ => panic!("Query is not a MultiHitHitsQuery"),
         }
     }
 }
@@ -131,7 +150,21 @@ impl TryUseMoveQuery {
     }
 }
 
-pub struct OnSpdQuery {
+pub struct OnStatQuery {
     pub trainer: bool,
+    pub stat: StatEnum,
     pub mults: Vec<f32>,
+}
+
+pub struct MultiHitRangeQuery {
+    pub move_context: MoveContext,
+    pub min_hits: u8,
+    pub max_hits: u8,
+}
+
+pub struct MultiHitHitsQuery {
+    pub move_context: MoveContext,
+    pub min_hits: u8,
+    pub max_hits: u8,
+    pub num_hits: u8,
 }

@@ -70,6 +70,10 @@ impl BattleState {
     pub fn get_rand_num(&mut self, upper_bound: u32) -> u32 {
         self.rng.gen_range(0..upper_bound)
     }
+
+    pub fn get_rand_num_inclusive(&mut self, lower_bound: u8, upper_bound: u8) -> u8 {
+        self.rng.gen_range(lower_bound..=upper_bound)
+    }
 }
 
 #[derive(Clone, Serialize)]

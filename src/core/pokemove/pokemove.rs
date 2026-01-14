@@ -28,6 +28,8 @@ pub struct PokeMove {
     pub move_type: PokeType,
     pub category: MoveCategory,
     pub pp: u32,
+    #[builder(default = false)]
+    pub is_multi_hit: bool,
 
     #[builder(default)]
     pub secondary_effects: Option<Vec<(u8, Vec<SecondaryEffect>)>>,

@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{cmp, sync::Arc};
 
 use crate::{
     battle::{
@@ -9,8 +9,8 @@ use crate::{
     },
     common::{context::MoveContext, registry::Registry},
     core::{
-        pokemon,
-        pokemove::move_name::MoveName,
+        pokemon::{self, boostable_stat::BoostableStat, stat_enum::StatEnum},
+        pokemove::{move_category::MoveCategory, move_name::MoveName},
         poketype::{effectiveness, pokemon_typing::PokemonTyping, poketype::PokeType},
         status::{status::Status, volatile_status::VolatileStatus},
         util::damage_utils,
@@ -24,7 +24,7 @@ use crate::{
     },
     query::{
         payload::PayloadMoveQuery,
-        query::{Query, TryUseMoveQuery},
+        query::{MultiHitHitsQuery, MultiHitRangeQuery, OnStatQuery, Query, TryUseMoveQuery},
         query_bus::QueryBus,
         query_handler::QueryHandler,
     },
@@ -58,11 +58,39 @@ impl BattleEngine {
     ) {
         let can_execute = BattleEngine::check_move_execution(battle_context, move_context);
 
-        if can_execute {
+        if !can_execute {
+            return;
+        }
+
+        if !BattleEngine::check_move_hit(battle_context, move_context) {
+            return;
+        }
+
+        let num_hits = if move_context.pokemove.is_multi_hit {
+            BattleEngine::get_multi_hit_hits(battle_context, move_context)
+        } else {
+            1
+        };
+
+        for _ in 0..num_hits {
             BattleEngine::single_hit_execution(battle_context, move_context, turn_state);
+
+            // cancel if either pokemon faints
+            if battle_context
+                .battle_state
+                .get_active_pokemon(move_context.target_trainer)
+                .is_fainted()
+                || battle_context
+                    .battle_state
+                    .get_active_pokemon(move_context.src_trainer)
+                    .is_fainted()
+            {
+                break;
+            }
         }
     }
 
+    // returns true if target fainted
     fn single_hit_execution(
         battle_context: &mut BattleContext,
         move_context: &MoveContext,
@@ -216,17 +244,33 @@ impl BattleEngine {
             .into_payload_move_query()
             .as_combined_modifier();
 
-        let mut atk_query = Query::OnAtk(PayloadMoveQuery::vec_f32(*move_context));
-        battle_context
-            .query_bus
-            .query(&mut atk_query, battle_context.battle_state);
-        let modified_atk = atk_query.into_payload_move_query().as_combined_modifier();
-
-        let mut def_query = Query::OnDef(PayloadMoveQuery::vec_f32(*move_context));
-        battle_context
-            .query_bus
-            .query(&mut def_query, battle_context.battle_state);
-        let modified_def = def_query.into_payload_move_query().as_combined_modifier();
+        let (modified_atk, modified_def) = match move_context.pokemove.category {
+            MoveCategory::Physical => (
+                BattleEngine::get_effective_stat_value(
+                    battle_context,
+                    move_context.src_trainer,
+                    StatEnum::Attack,
+                ),
+                BattleEngine::get_effective_stat_value(
+                    battle_context,
+                    move_context.target_trainer,
+                    StatEnum::Defense,
+                ),
+            ),
+            MoveCategory::Special => (
+                BattleEngine::get_effective_stat_value(
+                    battle_context,
+                    move_context.src_trainer,
+                    StatEnum::SpecialAttack,
+                ),
+                BattleEngine::get_effective_stat_value(
+                    battle_context,
+                    move_context.target_trainer,
+                    StatEnum::SpecialDefense,
+                ),
+            ),
+            MoveCategory::Status => panic!("Cannot calculate damage for Status move"),
+        };
 
         let mut mod1_query = Query::OnMod1(PayloadMoveQuery::vec_f32(*move_context));
         battle_context
@@ -342,16 +386,25 @@ impl BattleEngine {
             return false;
         }
 
-        let mut try_hit_query =
-            Query::TryHit(PayloadMoveQuery::bool_with_default(*move_context, true));
+        true
+    }
+
+    fn check_move_hit(battle_context: &mut BattleContext, move_context: &MoveContext) -> bool {
+        let mut get_move_hit_chance_query = Query::GetMoveHitChance(
+            PayloadMoveQuery::vec_f32_with_default(*move_context, vec![]),
+        );
         battle_context
             .query_bus
-            .query(&mut try_hit_query, battle_context.battle_state);
-        if !try_hit_query.into_payload_move_query().get_bool() {
-            return false;
-        }
+            .query(&mut get_move_hit_chance_query, battle_context.battle_state);
+        let modified_accuracy = cmp::min(
+            get_move_hit_chance_query
+                .into_payload_move_query()
+                .as_combined_modifier(),
+            100 as u32,
+        ) as u8;
 
-        true
+        let accuracy_roll = battle_context.battle_state.get_rand_num_inclusive(1, 100);
+        accuracy_roll <= modified_accuracy
     }
 
     fn process_try_use_move_secondary_effects(
@@ -383,6 +436,68 @@ impl BattleEngine {
             &mut battle_context.query_bus.registry,
             pokemon_battle_instance,
         );
+    }
+
+    fn get_multi_hit_hits(battle_context: &mut BattleContext, move_context: &MoveContext) -> u8 {
+        let mut multi_hit_range_query = Query::MultiHitRange(MultiHitRangeQuery {
+            move_context: *move_context,
+            min_hits: 2,
+            max_hits: 5,
+        });
+        battle_context
+            .query_bus
+            .query(&mut multi_hit_range_query, battle_context.battle_state);
+        let multi_hit_range_payload = multi_hit_range_query.into_multi_hit_range_query();
+
+        let mut multi_hit_hits_query = Query::MultiHitHits(MultiHitHitsQuery {
+            move_context: *move_context,
+            min_hits: multi_hit_range_payload.min_hits,
+            max_hits: multi_hit_range_payload.max_hits,
+            num_hits: 0,
+        });
+        battle_context
+            .query_bus
+            .query(&mut multi_hit_hits_query, battle_context.battle_state);
+        let multi_hit_hits_payload = multi_hit_hits_query.into_multi_hit_hits_query();
+        multi_hit_hits_payload.num_hits
+    }
+
+    pub fn get_effective_stat_value(
+        battle_context: &mut BattleContext,
+        trainer: bool,
+        stat_enum: StatEnum,
+    ) -> u32 {
+        let base_stat_value = battle_context
+            .battle_state
+            .get_active_pokemon(trainer)
+            .pokemon
+            .get_stat_value(stat_enum);
+        let boost_value = battle_context
+            .battle_state
+            .get_active_pokemon(trainer)
+            .boosts[BoostableStat::Stat(stat_enum)];
+
+        let mut stat_query = Query::OnStat(OnStatQuery {
+            trainer,
+            stat: stat_enum,
+            mults: vec![
+                base_stat_value as f32,
+                BattleEngine::get_stat_boost_to_multiplier(boost_value),
+            ],
+        });
+        battle_context
+            .query_bus
+            .query(&mut stat_query, battle_context.battle_state);
+        let stat_payload = stat_query.into_on_stat_query();
+        damage_utils::rounded_damage_from_modifiers(&stat_payload.mults)
+    }
+
+    fn get_stat_boost_to_multiplier(boost: i8) -> f32 {
+        if boost >= 0 {
+            (2.0 + boost as f32) / 2.0
+        } else {
+            2.0 / (2 - boost) as f32
+        }
     }
 
     fn register_handlers_for_pokemon(

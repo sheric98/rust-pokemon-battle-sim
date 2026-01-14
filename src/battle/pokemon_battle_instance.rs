@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     core::{
-        pokemon::{pokemon::Pokemon, stat_enum::StatEnum},
+        pokemon::{boostable_stat::BoostableStat, pokemon::Pokemon, stat_enum::StatEnum},
         status::{status::Status, volatile_status::VolatileStatus},
     },
     dex::{ability::ability_handlers, combined_handler::CombinedHandler, status::status_handlers},
@@ -23,7 +23,7 @@ pub struct PokemonBattleInstance {
     pub sleep_turns: u8,
     pub badly_poison_turns: u8,
     #[serde(skip)]
-    pub boosts: EnumMap<StatEnum, i8>,
+    pub boosts: EnumMap<BoostableStat, i8>,
 
     #[serde(skip)]
     pub ability_handler: Arc<dyn CombinedHandler>,

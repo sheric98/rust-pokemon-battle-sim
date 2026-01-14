@@ -125,4 +125,15 @@ impl Pokemon {
             _ => None,
         }
     }
+
+    pub fn get_stat_value(&self, stat: StatEnum) -> u16 {
+        match stat {
+            StatEnum::HP => self.hp,
+            StatEnum::Attack => self.attack,
+            StatEnum::Defense => self.defense,
+            StatEnum::SpecialAttack => self.spattack,
+            StatEnum::SpecialDefense => self.spdefense,
+            StatEnum::Speed => self.speed,
+        }
+    }
 }

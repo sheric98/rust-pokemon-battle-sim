@@ -15,8 +15,7 @@ impl Subscriber<Query> for StaticBattleHandler {
         &[
             QueryKind::OnPriority,
             QueryKind::OnBasePower,
-            QueryKind::OnAtk,
-            QueryKind::OnDef,
+            QueryKind::MultiHitHits,
         ]
     }
 
@@ -24,8 +23,7 @@ impl Subscriber<Query> for StaticBattleHandler {
         match kind {
             QueryKind::OnBasePower => 0,
             QueryKind::OnPriority => 0,
-            QueryKind::OnAtk => 0,
-            QueryKind::OnDef => 0,
+            QueryKind::MultiHitHits => 0,
             _ => panic!("Query priority in move handler for unhandled query"),
         }
     }
@@ -49,31 +47,9 @@ impl QueryHandler for StaticBattleHandler {
             Query::OnPriority(payload) => {
                 payload.payload = Payload::I8(payload.context.pokemove.priority);
             }
-            Query::OnAtk(payload) => {
-                let move_category = payload.context.pokemove.category;
-                let pokemon = &battle_state
-                    .get_active_pokemon(payload.context.src_trainer)
-                    .pokemon;
-                let stat = match move_category {
-                    MoveCategory::Physical => pokemon.attack,
-                    MoveCategory::Special => pokemon.spattack,
-                    _ => panic!("Cannot get attack for Status move"),
-                };
-
-                payload.get_vec_f32().push(stat as f32)
-            }
-            Query::OnDef(payload) => {
-                let move_category = payload.context.pokemove.category;
-                let pokemon = &battle_state
-                    .get_active_pokemon(payload.context.target_trainer)
-                    .pokemon;
-                let stat = match move_category {
-                    MoveCategory::Physical => pokemon.defense,
-                    MoveCategory::Special => pokemon.spdefense,
-                    _ => panic!("Cannot get defense for Status move"),
-                };
-
-                payload.get_vec_f32().push(stat as f32)
+            Query::MultiHitHits(payload) => {
+                payload.num_hits =
+                    battle_state.get_rand_num_inclusive(payload.min_hits, payload.max_hits);
             }
             _ => panic!("unhandled query for move handler"),
         }
