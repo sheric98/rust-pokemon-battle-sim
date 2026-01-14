@@ -12,7 +12,7 @@ use crate::{
         pokemon,
         pokemove::move_name::MoveName,
         poketype::{effectiveness, pokemon_typing::PokemonTyping, poketype::PokeType},
-        status::status::Status,
+        status::{status::Status, volatile_status::VolatileStatus},
         util::damage_utils,
     },
     dex::{combined_handler::CombinedHandler, pokemove::move_dex},
@@ -23,7 +23,10 @@ use crate::{
         event_type::{Event, FaintEvent},
     },
     query::{
-        payload::PayloadMoveQuery, query::Query, query_bus::QueryBus, query_handler::QueryHandler,
+        payload::PayloadMoveQuery,
+        query::{Query, TryUseMoveQuery},
+        query_bus::QueryBus,
+        query_handler::QueryHandler,
     },
 };
 
@@ -115,20 +118,29 @@ impl BattleEngine {
             return;
         }
 
-        let prev_status_handler = &battle_context
+        if battle_context
             .battle_state
             .get_active_pokemon(move_context.target_trainer)
-            .status_handler;
-        match prev_status_handler {
-            Some(handler) => {
-                BattleEngine::unregister_handler(
-                    &handler,
-                    &mut battle_context.event_registry,
-                    &mut battle_context.query_bus.registry,
-                );
-            }
-            None => {}
+            .status
+            != None
+        {
+            panic!("Trying to apply status to pokemon that already has a status");
         }
+
+        // let prev_status_handler = &battle_context
+        //     .battle_state
+        //     .get_active_pokemon(move_context.target_trainer)
+        //     .status_handler;
+        // match prev_status_handler {
+        //     Some(handler) => {
+        //         BattleEngine::unregister_handler(
+        //             &handler,
+        //             &mut battle_context.event_registry,
+        //             &mut battle_context.query_bus.registry,
+        //         );
+        //     }
+        //     None => {}
+        // }
 
         battle_context
             .battle_state
@@ -149,6 +161,50 @@ impl BattleEngine {
             }
             None => panic!("Status handler should be set after setting status"),
         }
+    }
+
+    pub fn remove_status(battle_context: &mut BattleContext, trainer: bool) {
+        let prev_status_handler = &battle_context
+            .battle_state
+            .get_active_pokemon(trainer)
+            .status_handler;
+        match prev_status_handler {
+            Some(handler) => {
+                BattleEngine::unregister_handler(
+                    &handler,
+                    &mut battle_context.event_registry,
+                    &mut battle_context.query_bus.registry,
+                );
+            }
+            None => panic!("No status handler to unregister when removing status"),
+        }
+
+        battle_context
+            .battle_state
+            .get_active_pokemon_mut(trainer)
+            .clear_status();
+    }
+
+    pub fn remove_volatile_status(
+        battle_context: &mut BattleContext,
+        trainer: bool,
+        volatile_status: VolatileStatus,
+    ) {
+        let pokemon_battle_instance = battle_context.battle_state.get_active_pokemon(trainer);
+
+        let volatile_status_handler =
+            pokemon_battle_instance.get_volatile_status_handler(&volatile_status);
+
+        BattleEngine::unregister_handler(
+            &volatile_status_handler,
+            &mut battle_context.event_registry,
+            &mut battle_context.query_bus.registry,
+        );
+
+        battle_context
+            .battle_state
+            .get_active_pokemon_mut(trainer)
+            .remove_volatile_status(&volatile_status);
     }
 
     fn calculate_damage(battle_context: &mut BattleContext, move_context: &MoveContext) -> u32 {
@@ -254,6 +310,20 @@ impl BattleEngine {
         battle_context: &mut BattleContext,
         move_context: &MoveContext,
     ) -> bool {
+        let mut try_use_move_query = Query::TryUseMove(TryUseMoveQuery::new(*move_context));
+        battle_context
+            .query_bus
+            .query(&mut try_use_move_query, battle_context.battle_state);
+        let try_use_move_payload = try_use_move_query.into_try_use_move_query();
+        BattleEngine::process_try_use_move_secondary_effects(
+            battle_context,
+            move_context,
+            &try_use_move_payload,
+        );
+        if try_use_move_payload.should_cancel {
+            return false;
+        }
+
         let mut invuln_query =
             Query::CheckInvulnerability(PayloadMoveQuery::bool_with_default(*move_context, true));
         battle_context
@@ -282,6 +352,24 @@ impl BattleEngine {
         }
 
         true
+    }
+
+    fn process_try_use_move_secondary_effects(
+        battle_context: &mut BattleContext,
+        move_context: &MoveContext,
+        try_use_move_payload: &TryUseMoveQuery,
+    ) {
+        if try_use_move_payload.unfreeze || try_use_move_payload.wake_sleep {
+            BattleEngine::remove_status(battle_context, move_context.target_trainer);
+        } else if try_use_move_payload.confuse_self {
+            todo!("Implement deal damage from confusion");
+        } else if try_use_move_payload.unconfuse {
+            BattleEngine::remove_volatile_status(
+                battle_context,
+                move_context.target_trainer,
+                VolatileStatus::Confusion,
+            );
+        }
     }
 
     fn switch_out_pokemon(battle_context: &mut BattleContext, trainer: bool, switch_idx: usize) {

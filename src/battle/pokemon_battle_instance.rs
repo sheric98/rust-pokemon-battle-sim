@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use enum_map::EnumMap;
 use serde::{Deserialize, Serialize};
@@ -17,7 +17,8 @@ use crate::{
 pub struct PokemonBattleInstance {
     pub pokemon: Pokemon,
     pub status: Option<Status>,
-    pub volatile_statuses: Vec<VolatileStatus>,
+    #[serde(skip)]
+    pub volatile_statuses: HashMap<VolatileStatus, Arc<dyn CombinedHandler>>,
     pub trainer_side: bool,
     pub sleep_turns: u8,
     pub badly_poison_turns: u8,
@@ -28,9 +29,6 @@ pub struct PokemonBattleInstance {
     pub ability_handler: Arc<dyn CombinedHandler>,
     #[serde(skip)]
     pub status_handler: Option<Arc<dyn CombinedHandler>>,
-
-    #[serde(skip)]
-    pub volatile_status_handlers: Vec<Arc<dyn CombinedHandler>>,
 }
 
 impl PokemonBattleInstance {
@@ -43,13 +41,11 @@ impl PokemonBattleInstance {
             status: None,
             sleep_turns: 0,
             badly_poison_turns: 0,
-            volatile_statuses: vec![],
+            volatile_statuses: HashMap::new(),
             boosts: EnumMap::default(),
 
             ability_handler: ability_handlers::get_ability_handler(&ability, trainer_side),
             status_handler: None,
-
-            volatile_status_handlers: vec![],
         }
     }
 
@@ -59,6 +55,24 @@ impl PokemonBattleInstance {
             status,
             self.trainer_side,
         ));
+    }
+
+    pub fn get_volatile_status_handler(
+        &self,
+        status: &VolatileStatus,
+    ) -> &Arc<dyn CombinedHandler> {
+        self.volatile_statuses
+            .get(status)
+            .expect("Trying to get status handler that does not exist")
+    }
+
+    pub fn remove_volatile_status(&mut self, status: &VolatileStatus) {
+        self.volatile_statuses.remove(status);
+    }
+
+    pub fn clear_status(&mut self) {
+        self.status = None;
+        self.status_handler = None;
     }
 
     pub fn set_fainted(&mut self) {
@@ -74,7 +88,7 @@ impl PokemonBattleInstance {
 
     pub fn reset(&mut self) {
         self.volatile_statuses.clear();
-        self.volatile_status_handlers.clear();
+        self.badly_poison_turns = 0;
 
         self.boosts.clear();
     }
@@ -88,7 +102,7 @@ impl PokemonBattleInstance {
             handlers.push(status_handler.clone());
         }
 
-        for volatile_status_handler in &self.volatile_status_handlers {
+        for volatile_status_handler in self.volatile_statuses.values() {
             handlers.push(volatile_status_handler.clone());
         }
 
@@ -104,7 +118,7 @@ impl PokemonBattleInstance {
             handlers.push(status_handler.clone());
         }
 
-        for volatile_status_handler in &self.volatile_status_handlers {
+        for volatile_status_handler in self.volatile_statuses.values() {
             handlers.push(volatile_status_handler.clone());
         }
 
