@@ -24,7 +24,10 @@ use crate::{
     },
     query::{
         payload::PayloadMoveQuery,
-        query::{MultiHitHitsQuery, MultiHitRangeQuery, OnStatQuery, Query, TryUseMoveQuery},
+        query::{
+            CanApplyStatusQuery, CanApplyVolatileStatusQuery, MultiHitHitsQuery,
+            MultiHitRangeQuery, OnStatQuery, Query, TryUseMoveQuery,
+        },
         query_bus::QueryBus,
         query_handler::QueryHandler,
     },
@@ -73,7 +76,14 @@ impl BattleEngine {
         };
 
         for _ in 0..num_hits {
-            BattleEngine::single_hit_execution(battle_context, move_context, turn_state);
+            match move_context.pokemove.category {
+                MoveCategory::Status => {
+                    Self::apply_status_move(battle_context, move_context);
+                }
+                MoveCategory::Physical | MoveCategory::Special => {
+                    BattleEngine::single_hit_execution(battle_context, move_context, turn_state);
+                }
+            };
 
             // cancel if either pokemon faints
             if battle_context
@@ -132,17 +142,79 @@ impl BattleEngine {
         }
     }
 
+    fn apply_status_move(battle_context: &mut BattleContext, move_context: &MoveContext) {
+        if let Some(status) = &move_context.pokemove.status {
+            BattleEngine::set_status(battle_context, move_context, *status);
+        }
+
+        if let Some(volatile_status) = &move_context.pokemove.volatile_status {
+            Self::set_volatile_status(battle_context, move_context, *volatile_status);
+        }
+
+        if let Some(boosts) = &move_context.pokemove.boosts {
+            for (stat, amount) in boosts {
+                Self::apply_boost(battle_context, move_context, *stat, *amount);
+            }
+        }
+    }
+
+    fn apply_boost(
+        battle_context: &mut BattleContext,
+        move_context: &MoveContext,
+        stat: BoostableStat,
+        amount: i8,
+    ) {
+        battle_context
+            .battle_state
+            .get_active_pokemon_mut(move_context.target_trainer)
+            .modify_boost(stat, amount);
+    }
+
+    fn set_volatile_status(
+        battle_context: &mut BattleContext,
+        move_context: &MoveContext,
+        volatile_status: VolatileStatus,
+    ) {
+        let mut can_apply_volatile_status_query = Query::CanApplyVolatileStatus(
+            CanApplyVolatileStatusQuery::new(*move_context, volatile_status),
+        );
+        battle_context.query_bus.query(
+            &mut can_apply_volatile_status_query,
+            battle_context.battle_state,
+        );
+        if !can_apply_volatile_status_query
+            .into_can_apply_volatile_status_query()
+            .can_apply
+        {
+            return;
+        }
+
+        let volatile_status_handler = battle_context
+            .battle_state
+            .get_active_pokemon_mut(move_context.target_trainer)
+            .add_volatile_status(volatile_status);
+
+        BattleEngine::register_handler(
+            volatile_status_handler,
+            &mut battle_context.event_registry,
+            &mut battle_context.query_bus.registry,
+        );
+    }
+
     pub fn set_status(
         battle_context: &mut BattleContext,
         move_context: &MoveContext,
         status: Status,
     ) {
         let mut can_apply_status_query =
-            Query::CanApplyStatus(PayloadMoveQuery::bool(*move_context));
+            Query::CanApplyStatus(CanApplyStatusQuery::new(*move_context, status));
         battle_context
             .query_bus
             .query(&mut can_apply_status_query, battle_context.battle_state);
-        if !can_apply_status_query.into_payload_move_query().get_bool() {
+        if !can_apply_status_query
+            .into_can_apply_status_query()
+            .can_apply
+        {
             return;
         }
 
@@ -390,6 +462,10 @@ impl BattleEngine {
     }
 
     fn check_move_hit(battle_context: &mut BattleContext, move_context: &MoveContext) -> bool {
+        if move_context.pokemove.accuracy.is_none() {
+            return true;
+        }
+
         let mut get_move_hit_chance_query = Query::GetMoveHitChance(
             PayloadMoveQuery::vec_f32_with_default(*move_context, vec![]),
         );

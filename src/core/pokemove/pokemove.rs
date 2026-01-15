@@ -3,7 +3,7 @@ use typed_builder::TypedBuilder;
 
 use crate::{
     core::{
-        pokemon::stat_enum::StatEnum,
+        pokemon::{boostable_stat::BoostableStat, stat_enum::StatEnum},
         pokemove::{
             move_category::{self, MoveCategory},
             move_name::MoveName,
@@ -39,7 +39,7 @@ pub struct PokeMove {
     #[builder(default)]
     pub volatile_status: Option<VolatileStatus>,
     #[builder(default)]
-    pub boosts: Option<Vec<(StatEnum, i8)>>,
+    pub boosts: Option<Vec<(BoostableStat, i8)>>,
 
     #[builder(default=MoveTarget::Opponent)]
     pub target: MoveTarget,

@@ -1,6 +1,9 @@
 use crate::{
     common::{context::MoveContext, has_kind::HasKind},
-    core::pokemon::stat_enum::StatEnum,
+    core::{
+        pokemon::stat_enum::StatEnum,
+        status::{status::Status, volatile_status::VolatileStatus},
+    },
     query::payload::PayloadMoveQuery,
 };
 
@@ -23,6 +26,7 @@ pub enum QueryKind {
     GetMoveHitChance,
     FinalDamage,
     CanApplyStatus,
+    CanApplyVolatileStatus,
     MultiHitRange,
     MultiHitHits,
 }
@@ -44,7 +48,8 @@ pub enum Query {
     CheckImmunity(PayloadMoveQuery),
     GetMoveHitChance(PayloadMoveQuery),
     FinalDamage(PayloadMoveQuery),
-    CanApplyStatus(PayloadMoveQuery),
+    CanApplyStatus(CanApplyStatusQuery),
+    CanApplyVolatileStatus(CanApplyVolatileStatusQuery),
     MultiHitRange(MultiHitRangeQuery),
     MultiHitHits(MultiHitHitsQuery),
 }
@@ -71,6 +76,7 @@ impl HasKind for Query {
             Query::GetMoveHitChance(_) => QueryKind::GetMoveHitChance,
             Query::FinalDamage(_) => QueryKind::FinalDamage,
             Query::CanApplyStatus(_) => QueryKind::CanApplyStatus,
+            Query::CanApplyVolatileStatus(_) => QueryKind::CanApplyVolatileStatus,
             Query::MultiHitRange(_) => QueryKind::MultiHitRange,
             Query::MultiHitHits(_) => QueryKind::MultiHitHits,
         }
@@ -94,7 +100,6 @@ impl Query {
             Query::CheckImmunity(e) => e,
             Query::GetMoveHitChance(e) => e,
             Query::FinalDamage(e) => e,
-            Query::CanApplyStatus(e) => e,
             _ => panic!("Query is not a PayloadMoveQuery"),
         }
     }
@@ -126,6 +131,20 @@ impl Query {
             _ => panic!("Query is not a MultiHitHitsQuery"),
         }
     }
+
+    pub fn into_can_apply_status_query(self) -> CanApplyStatusQuery {
+        match self {
+            Query::CanApplyStatus(e) => e,
+            _ => panic!("Query is not a CanApplyStatusQuery"),
+        }
+    }
+
+    pub fn into_can_apply_volatile_status_query(self) -> CanApplyVolatileStatusQuery {
+        match self {
+            Query::CanApplyVolatileStatus(e) => e,
+            _ => panic!("Query is not a CanApplyVolatileStatusQuery"),
+        }
+    }
 }
 
 pub struct TryUseMoveQuery {
@@ -154,6 +173,38 @@ pub struct OnStatQuery {
     pub trainer: bool,
     pub stat: StatEnum,
     pub mults: Vec<f32>,
+}
+
+pub struct CanApplyStatusQuery {
+    pub move_context: MoveContext,
+    pub status: Status,
+    pub can_apply: bool,
+}
+
+impl CanApplyStatusQuery {
+    pub fn new(move_context: MoveContext, status: Status) -> Self {
+        Self {
+            move_context,
+            status,
+            can_apply: true,
+        }
+    }
+}
+
+pub struct CanApplyVolatileStatusQuery {
+    pub move_context: MoveContext,
+    pub volatile_status: VolatileStatus,
+    pub can_apply: bool,
+}
+
+impl CanApplyVolatileStatusQuery {
+    pub fn new(move_context: MoveContext, volatile_status: VolatileStatus) -> Self {
+        Self {
+            move_context,
+            volatile_status,
+            can_apply: true,
+        }
+    }
 }
 
 pub struct MultiHitRangeQuery {

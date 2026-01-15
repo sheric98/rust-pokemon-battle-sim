@@ -4,7 +4,7 @@ use strum::EnumIter;
 
 use crate::core::pokemon::stat_enum::StatEnum;
 
-#[derive(Enum, EnumIter, Hash, Eq, PartialEq, Display)]
+#[derive(Copy, Clone, Enum, EnumIter, Hash, Eq, PartialEq, Display)]
 pub enum BoostableStat {
     Stat(StatEnum),
     Accuracy,

@@ -8,7 +8,11 @@ use crate::{
         pokemon::{boostable_stat::BoostableStat, pokemon::Pokemon, stat_enum::StatEnum},
         status::{status::Status, volatile_status::VolatileStatus},
     },
-    dex::{ability::ability_handlers, combined_handler::CombinedHandler, status::status_handlers},
+    dex::{
+        ability::ability_handlers,
+        combined_handler::CombinedHandler,
+        status::{status_handlers, volatile_status_handlers},
+    },
     event::event_handler::EventHandler,
     query::query_handler::QueryHandler,
 };
@@ -21,6 +25,7 @@ pub struct PokemonBattleInstance {
     pub volatile_statuses: HashMap<VolatileStatus, Arc<dyn CombinedHandler>>,
     pub trainer_side: bool,
     pub sleep_turns: u8,
+    pub confusion_turns: u8,
     pub badly_poison_turns: u8,
     #[serde(skip)]
     pub boosts: EnumMap<BoostableStat, i8>,
@@ -40,6 +45,7 @@ impl PokemonBattleInstance {
             trainer_side,
             status: None,
             sleep_turns: 0,
+            confusion_turns: 0,
             badly_poison_turns: 0,
             volatile_statuses: HashMap::new(),
             boosts: EnumMap::default(),
@@ -66,10 +72,6 @@ impl PokemonBattleInstance {
             .expect("Trying to get status handler that does not exist")
     }
 
-    pub fn remove_volatile_status(&mut self, status: &VolatileStatus) {
-        self.volatile_statuses.remove(status);
-    }
-
     pub fn clear_status(&mut self) {
         self.status = None;
         self.status_handler = None;
@@ -86,9 +88,27 @@ impl PokemonBattleInstance {
         }
     }
 
+    pub fn add_volatile_status(&mut self, status: VolatileStatus) -> &Arc<dyn CombinedHandler> {
+        let handler =
+            volatile_status_handlers::get_volatile_status_handler(status, self.trainer_side);
+        self.volatile_statuses.insert(status, handler);
+        self.volatile_statuses.get(&status).unwrap()
+    }
+
+    pub fn remove_volatile_status(&mut self, status: &VolatileStatus) -> Arc<dyn CombinedHandler> {
+        self.volatile_statuses.remove(status).unwrap()
+    }
+
+    pub fn modify_boost(&mut self, stat: BoostableStat, amount: i8) {
+        let current_boost = self.boosts[stat];
+        let new_boost = (current_boost + amount).clamp(-6, 6);
+        self.boosts[stat] = new_boost;
+    }
+
     pub fn reset(&mut self) {
         self.volatile_statuses.clear();
         self.badly_poison_turns = 0;
+        self.confusion_turns = 0;
 
         self.boosts.clear();
     }

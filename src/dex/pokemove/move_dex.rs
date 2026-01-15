@@ -3,7 +3,7 @@ use std::{collections::HashMap, sync::LazyLock};
 use enum_map::{EnumMap, enum_map};
 
 use crate::core::{
-    pokemon::stat_enum::StatEnum,
+    pokemon::{boostable_stat::BoostableStat, stat_enum::StatEnum},
     pokemove::{
         move_category::MoveCategory, move_name::MoveName, pokemove::PokeMove,
         secondary_effect::SecondaryEffect,
@@ -38,7 +38,7 @@ static MOVES_DB: LazyLock<EnumMap<MoveName, PokeMove>> = LazyLock::new(|| {
                 .name(MoveName::Growl)
                 .category(MoveCategory::Status)
                 .accuracy(Some(100))
-                .boosts(Some(vec![(StatEnum::Attack, -1)]))
+                .boosts(Some(vec![(BoostableStat::Stat(StatEnum::Attack), -1)]))
                 .move_type(PokeType::Normal)
                 .pp(40)
                 .build(),
