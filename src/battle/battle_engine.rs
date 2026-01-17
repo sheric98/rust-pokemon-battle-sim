@@ -10,7 +10,9 @@ use crate::{
     common::{context::MoveContext, registry::Registry},
     core::{
         pokemon::{self, boostable_stat::BoostableStat, stat_enum::StatEnum},
-        pokemove::{move_category::MoveCategory, move_name::MoveName},
+        pokemove::{
+            move_category::MoveCategory, move_name::MoveName, secondary_effect::SecondaryEffect,
+        },
         poketype::{effectiveness, pokemon_typing::PokemonTyping, poketype::PokeType},
         status::{status::Status, volatile_status::VolatileStatus},
         util::damage_utils,
@@ -82,6 +84,7 @@ impl BattleEngine {
                 }
                 MoveCategory::Physical | MoveCategory::Special => {
                     BattleEngine::single_hit_execution(battle_context, move_context, turn_state);
+                    Self::apply_secondary_effect(battle_context, move_context);
                 }
             };
 
@@ -153,20 +156,84 @@ impl BattleEngine {
 
         if let Some(boosts) = &move_context.pokemove.boosts {
             for (stat, amount) in boosts {
-                Self::apply_boost(battle_context, move_context, *stat, *amount);
+                Self::apply_boost(battle_context, move_context.target_trainer, *stat, *amount);
             }
         }
     }
 
+    fn apply_secondary_effect(battle_context: &mut BattleContext, move_context: &MoveContext) {
+        if move_context.pokemove.secondary_effects.is_none() {
+            return;
+        }
+
+        let target_fainted = battle_context
+            .battle_state
+            .get_active_pokemon(move_context.target_trainer)
+            .is_fainted();
+        let source_fainted = battle_context
+            .battle_state
+            .get_active_pokemon(move_context.src_trainer)
+            .is_fainted();
+
+        let secondary_effects = move_context.pokemove.secondary_effects.as_ref().unwrap();
+
+        secondary_effects.iter().for_each(|chance_and_effects| {
+            let (chance, effects) = chance_and_effects;
+
+            let mut chance_query = Query::OnSecondaryEffectChance(
+                PayloadMoveQuery::u8_with_default(*move_context, *chance),
+            );
+            battle_context
+                .query_bus
+                .query(&mut chance_query, battle_context.battle_state);
+            let modified_chance = chance_query.into_payload_move_query().get_u8();
+
+            let roll = battle_context
+                .battle_state
+                .get_random_check(modified_chance as u32, 100);
+            if !roll {
+                return;
+            }
+
+            for effect in effects {
+                if (effect.affect_target() && target_fainted)
+                    || (effect.affect_source() && source_fainted)
+                {
+                    continue;
+                }
+
+                match effect {
+                    SecondaryEffect::Status(status) => {
+                        Self::set_status(battle_context, move_context, *status);
+                    }
+                    SecondaryEffect::VolatileStatus(volatile_status) => {
+                        Self::set_volatile_status(battle_context, move_context, *volatile_status);
+                    }
+                    SecondaryEffect::UserBoost(stat, amount) => {
+                        Self::apply_boost(battle_context, move_context.src_trainer, *stat, *amount);
+                    }
+                    SecondaryEffect::TargetBoost(stat, amount) => {
+                        Self::apply_boost(
+                            battle_context,
+                            move_context.target_trainer,
+                            *stat,
+                            *amount,
+                        );
+                    }
+                }
+            }
+        });
+    }
+
     fn apply_boost(
         battle_context: &mut BattleContext,
-        move_context: &MoveContext,
+        target_trainer: bool,
         stat: BoostableStat,
         amount: i8,
     ) {
         battle_context
             .battle_state
-            .get_active_pokemon_mut(move_context.target_trainer)
+            .get_active_pokemon_mut(target_trainer)
             .modify_boost(stat, amount);
     }
 

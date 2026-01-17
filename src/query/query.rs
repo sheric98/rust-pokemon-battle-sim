@@ -29,6 +29,7 @@ pub enum QueryKind {
     CanApplyVolatileStatus,
     MultiHitRange,
     MultiHitHits,
+    OnSecondaryEffectChance,
 }
 
 pub enum Query {
@@ -52,6 +53,7 @@ pub enum Query {
     CanApplyVolatileStatus(CanApplyVolatileStatusQuery),
     MultiHitRange(MultiHitRangeQuery),
     MultiHitHits(MultiHitHitsQuery),
+    OnSecondaryEffectChance(PayloadMoveQuery),
 }
 
 impl HasKind for Query {
@@ -79,6 +81,7 @@ impl HasKind for Query {
             Query::CanApplyVolatileStatus(_) => QueryKind::CanApplyVolatileStatus,
             Query::MultiHitRange(_) => QueryKind::MultiHitRange,
             Query::MultiHitHits(_) => QueryKind::MultiHitHits,
+            Query::OnSecondaryEffectChance(_) => QueryKind::OnSecondaryEffectChance,
         }
     }
 }
@@ -100,6 +103,7 @@ impl Query {
             Query::CheckImmunity(e) => e,
             Query::GetMoveHitChance(e) => e,
             Query::FinalDamage(e) => e,
+            Query::OnSecondaryEffectChance(e) => e,
             _ => panic!("Query is not a PayloadMoveQuery"),
         }
     }
