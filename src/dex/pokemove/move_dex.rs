@@ -59,3 +59,10 @@ static MOVES_DB: LazyLock<EnumMap<MoveName, PokeMove>> = LazyLock::new(|| {
 pub fn get_move_data(move_name: &MoveName) -> &'static PokeMove {
     &MOVES_DB[*move_name]
 }
+
+pub fn get_move_pp(move_name: &MoveName) -> u8 {
+    match move_name {
+        MoveName::Empty => 0,
+        _ => get_move_data(move_name).pp,
+    }
+}

@@ -29,7 +29,7 @@ pub struct Pokemon {
 
     pub typing: PokemonTyping,
 
-    pub moves: (MoveName, MoveName, MoveName, MoveName),
+    pub moves: [MoveName; 4],
 
     pub ability: Ability,
 }
@@ -58,11 +58,11 @@ impl Pokemon {
             panic!("Contains duplicate moves")
         }
 
-        let moves_tuple = match moves.as_slice() {
-            [move1] => (*move1, MoveName::Empty, MoveName::Empty, MoveName::Empty),
-            [move1, move2] => (*move1, *move2, MoveName::Empty, MoveName::Empty),
-            [move1, move2, move3] => (*move1, *move2, *move3, MoveName::Empty),
-            [move1, move2, move3, move4] => (*move1, *move2, *move3, *move4),
+        let moves_arr = match moves.as_slice() {
+            [move1] => [*move1, MoveName::Empty, MoveName::Empty, MoveName::Empty],
+            [move1, move2] => [*move1, *move2, MoveName::Empty, MoveName::Empty],
+            [move1, move2, move3] => [*move1, *move2, *move3, MoveName::Empty],
+            [move1, move2, move3, move4] => [*move1, *move2, *move3, *move4],
             _ => panic!("Unexpected number of moves!"),
         };
 
@@ -111,17 +111,17 @@ impl Pokemon {
             spdefense: stat_map[StatEnum::SpecialDefense],
             speed: stat_map[StatEnum::Speed],
             typing: base_pokemon.typing,
-            moves: moves_tuple,
+            moves: moves_arr,
             ability,
         }
     }
 
     pub fn get_move_for_action(&self, action: &Action) -> Option<MoveName> {
         match action {
-            Action::Move(MoveSlot::Slot0) => Some(self.moves.0),
-            Action::Move(MoveSlot::Slot1) => Some(self.moves.1),
-            Action::Move(MoveSlot::Slot2) => Some(self.moves.2),
-            Action::Move(MoveSlot::Slot3) => Some(self.moves.3),
+            Action::Move(MoveSlot::Slot0) => Some(self.moves[0]),
+            Action::Move(MoveSlot::Slot1) => Some(self.moves[1]),
+            Action::Move(MoveSlot::Slot2) => Some(self.moves[2]),
+            Action::Move(MoveSlot::Slot3) => Some(self.moves[3]),
             _ => None,
         }
     }
@@ -135,5 +135,12 @@ impl Pokemon {
             StatEnum::SpecialDefense => self.spdefense,
             StatEnum::Speed => self.speed,
         }
+    }
+
+    pub fn get_idx_for_move_name(&self, move_name: &MoveName) -> usize {
+        self.moves
+            .iter()
+            .position(|target| move_name == target)
+            .expect("Trying to find move_name that doesn't belong to this pokemon")
     }
 }

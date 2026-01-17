@@ -101,6 +101,8 @@ impl BattleEngine {
                 break;
             }
         }
+
+        Self::deduct_pp(battle_context, move_context);
     }
 
     // returns true if target fainted
@@ -111,6 +113,20 @@ impl BattleEngine {
     ) {
         let damage = BattleEngine::calculate_damage(battle_context, move_context);
         BattleEngine::deal_damage(battle_context, Some(move_context), None, turn_state, damage);
+    }
+
+    fn deduct_pp(battle_context: &mut BattleContext, move_context: &MoveContext) {
+        let mut deduct_pp_query =
+            Query::GetDeductPP(PayloadMoveQuery::u8_with_default(*move_context, 1));
+        battle_context
+            .query_bus
+            .query(&mut deduct_pp_query, battle_context.battle_state);
+        let pp_to_deduct = deduct_pp_query.into_payload_move_query().get_u8();
+
+        battle_context
+            .battle_state
+            .get_active_pokemon_mut(move_context.src_trainer)
+            .deduct_pp(&move_context.move_name, pp_to_deduct);
     }
 
     pub fn deal_damage_and_heal(

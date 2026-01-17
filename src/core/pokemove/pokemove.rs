@@ -27,7 +27,7 @@ pub struct PokeMove {
     pub priority: i8,
     pub move_type: PokeType,
     pub category: MoveCategory,
-    pub pp: u32,
+    pub pp: u8,
     #[builder(default = false)]
     pub is_multi_hit: bool,
 

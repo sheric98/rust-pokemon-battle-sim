@@ -6,11 +6,13 @@ use serde::{Deserialize, Serialize};
 use crate::{
     core::{
         pokemon::{boostable_stat::BoostableStat, pokemon::Pokemon, stat_enum::StatEnum},
+        pokemove::move_name::MoveName,
         status::{status::Status, volatile_status::VolatileStatus},
     },
     dex::{
         ability::ability_handlers,
         combined_handler::CombinedHandler,
+        pokemove::move_dex,
         status::{status_handlers, volatile_status_handlers},
     },
     event::event_handler::EventHandler,
@@ -34,11 +36,14 @@ pub struct PokemonBattleInstance {
     pub ability_handler: Arc<dyn CombinedHandler>,
     #[serde(skip)]
     pub status_handler: Option<Arc<dyn CombinedHandler>>,
+
+    pub pp: [u8; 4],
 }
 
 impl PokemonBattleInstance {
     pub fn new(pokemon: Pokemon, trainer_side: bool) -> Self {
         let ability = pokemon.ability;
+        let moves = pokemon.moves;
 
         Self {
             pokemon,
@@ -52,6 +57,7 @@ impl PokemonBattleInstance {
 
             ability_handler: ability_handlers::get_ability_handler(&ability, trainer_side),
             status_handler: None,
+            pp: moves.map(|move_name| move_dex::get_move_pp(&move_name)),
         }
     }
 
@@ -143,5 +149,14 @@ impl PokemonBattleInstance {
         }
 
         handlers
+    }
+
+    pub fn deduct_pp(&mut self, move_name: &MoveName, amt: u8) {
+        let idx = self.pokemon.get_idx_for_move_name(move_name);
+        if amt > self.pp[idx] {
+            self.pp[idx] = 0;
+        } else {
+            self.pp[idx] -= amt;
+        }
     }
 }

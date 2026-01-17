@@ -68,8 +68,3 @@ pub struct CanApplyMoveEvent {
     pub move_name: MoveName,
     pub can_apply: bool,
 }
-
-pub struct GetDeductPPEvent {
-    pub move_name: MoveName,
-    pub amount: u8,
-}
