@@ -11,7 +11,11 @@ use crate::{
 
 handler!(BurnHandler ( s, state ) {
     events {
-        OnTurnEnd => {
+        OnTurnEnd(trainer) => {
+            if *trainer != s.trainer_side {
+                return vec![];
+            }
+
             let target_trainer = s.trainer_side;
             let target_pokemon = &state.get_active_pokemon(target_trainer).pokemon;
 
@@ -83,7 +87,11 @@ handler!(SleepHandler ( s, state ) {
 
 handler!(PoisonHandler ( s, state ) {
     events {
-        OnTurnEnd => {
+        OnTurnEnd(trainer) => {
+            if *trainer != s.trainer_side {
+                return vec![];
+            }
+
             let target_trainer = s.trainer_side;
             let target_pokemon = &state.get_active_pokemon(target_trainer).pokemon;
 
@@ -96,7 +104,11 @@ handler!(PoisonHandler ( s, state ) {
 
 handler!(BadlyPoisonHandler ( s, state ) {
     events {
-        OnTurnEnd => {
+        OnTurnEnd(trainer) => {
+            if *trainer != s.trainer_side {
+                return vec![];
+            }
+
             let target_trainer = s.trainer_side;
             let target_max_hp = state.get_active_pokemon(target_trainer).pokemon.max_hp;
             let curr_badly_poison_turns = state.get_active_pokemon(target_trainer).badly_poison_turns;

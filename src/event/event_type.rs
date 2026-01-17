@@ -17,7 +17,7 @@ pub enum Event {
     Switch(SwitchEvent),
     Faint(FaintEvent),
     BeginTurn,
-    OnTurnEnd,
+    OnTurnEnd(bool),
 }
 
 impl HasKind for Event {
@@ -29,7 +29,7 @@ impl HasKind for Event {
             Event::Switch(_) => EventKind::Switch,
             Event::BeginTurn => EventKind::BeginTurn,
             Event::Faint(_) => EventKind::Faint,
-            Event::OnTurnEnd => EventKind::OnTurnEnd,
+            Event::OnTurnEnd(_) => EventKind::OnTurnEnd,
         }
     }
 }

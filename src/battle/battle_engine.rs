@@ -268,6 +268,20 @@ impl BattleEngine {
         );
     }
 
+    pub fn queue_after_turn_effects(
+        battle_context: &mut BattleContext,
+        turn_state: &mut TurnState,
+    ) {
+        let trainer_1_first = Self::resolve_speed_order(battle_context);
+
+        battle_context
+            .event_queue
+            .add_event(Event::OnTurnEnd(trainer_1_first));
+        battle_context
+            .event_queue
+            .add_event(Event::OnTurnEnd(!trainer_1_first));
+    }
+
     pub fn set_status(
         battle_context: &mut BattleContext,
         move_context: &MoveContext,
@@ -487,6 +501,18 @@ impl BattleEngine {
             type1_mult,
             type2_mult,
         )
+    }
+
+    pub fn resolve_speed_order(battle_context: &mut BattleContext) -> bool {
+        let speed1 = BattleEngine::get_effective_stat_value(battle_context, true, StatEnum::Speed);
+        let speed2 = BattleEngine::get_effective_stat_value(battle_context, false, StatEnum::Speed);
+        if speed1 > speed2 {
+            true
+        } else if speed2 > speed1 {
+            false
+        } else {
+            battle_context.battle_state.get_random_check(1, 2)
+        }
     }
 
     fn check_move_execution(

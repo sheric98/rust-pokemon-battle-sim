@@ -50,7 +50,10 @@ handler!(InfatuationHandler ( s, state ) {
 
 handler!(LeechSeedHandler ( s, state ) {
     events {
-        OnTurnEnd => {
+        OnTurnEnd(trainer) => {
+            if *trainer != s.trainer_side {
+                return vec![];
+            }
             let target_trainer = s.trainer_side;
             let target_pokemon = &state.get_active_pokemon(target_trainer).pokemon;
 

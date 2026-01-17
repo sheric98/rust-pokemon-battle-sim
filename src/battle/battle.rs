@@ -100,6 +100,9 @@ impl Battle {
             }
         }
 
+        BattleEngine::queue_after_turn_effects(&mut self.battle_context(), &mut turn_state);
+        self.event_bus.drain_event_queue(&mut self.battle_state);
+
         self.generate_battle_request_from_turn_state(&turn_state)
     }
 
@@ -139,17 +142,7 @@ impl Battle {
         } else if priority2 > priority1 {
             false
         } else {
-            let speed1 =
-                BattleEngine::get_effective_stat_value(&mut battle_context, true, StatEnum::Speed);
-            let speed2 =
-                BattleEngine::get_effective_stat_value(&mut battle_context, false, StatEnum::Speed);
-            if speed1 > speed2 {
-                true
-            } else if speed2 > speed1 {
-                false
-            } else {
-                battle_context.battle_state.get_random_check(1, 2)
-            }
+            BattleEngine::resolve_speed_order(&mut battle_context)
         }
     }
 

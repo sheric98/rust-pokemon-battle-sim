@@ -53,6 +53,9 @@ impl EventBus {
             EventHandlerEffect::Damage(_) => {
                 panic!("Not implemented yet");
             }
+            EventHandlerEffect::DamageAndHeal(_, _, _) => {
+                panic!("Not implemented yet");
+            }
         }
     }
 }
