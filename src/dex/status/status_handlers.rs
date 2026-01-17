@@ -21,7 +21,7 @@ handler!(BurnHandler ( s, state ) {
 
             let burn_damage = target_pokemon.max_hp as u32 / 16;
 
-            vec![EventHandlerEffect::Damage(burn_damage)]
+            vec![EventHandlerEffect::Damage(burn_damage, s.trainer_side)]
         }
     },
     queries {
@@ -97,7 +97,7 @@ handler!(PoisonHandler ( s, state ) {
 
             let poison_damage = target_pokemon.max_hp as u32 / 8;
 
-            vec![EventHandlerEffect::Damage(poison_damage)]
+            vec![EventHandlerEffect::Damage(poison_damage, s.trainer_side)]
         }
     }
 });
@@ -118,7 +118,7 @@ handler!(BadlyPoisonHandler ( s, state ) {
 
             let poison_damage = (target_max_hp * new_badly_poison_turns as u16) as u32 / 8;
 
-            vec![EventHandlerEffect::Damage(poison_damage)]
+            vec![EventHandlerEffect::Damage(poison_damage, s.trainer_side)]
         }
     }
 });

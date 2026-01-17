@@ -48,7 +48,7 @@ pub enum Query {
     CheckInvulnerability(PayloadMoveQuery),
     CheckImmunity(PayloadMoveQuery),
     GetMoveHitChance(PayloadMoveQuery),
-    FinalDamage(PayloadMoveQuery),
+    FinalDamage(FinalDamageQuery),
     CanApplyStatus(CanApplyStatusQuery),
     CanApplyVolatileStatus(CanApplyVolatileStatusQuery),
     MultiHitRange(MultiHitRangeQuery),
@@ -102,7 +102,6 @@ impl Query {
             Query::CheckInvulnerability(e) => e,
             Query::CheckImmunity(e) => e,
             Query::GetMoveHitChance(e) => e,
-            Query::FinalDamage(e) => e,
             Query::OnSecondaryEffectChance(e) => e,
             _ => panic!("Query is not a PayloadMoveQuery"),
         }
@@ -147,6 +146,13 @@ impl Query {
         match self {
             Query::CanApplyVolatileStatus(e) => e,
             _ => panic!("Query is not a CanApplyVolatileStatusQuery"),
+        }
+    }
+
+    pub fn into_final_damage_query(self) -> FinalDamageQuery {
+        match self {
+            Query::FinalDamage(e) => e,
+            _ => panic!("Query is not a FinalDamageQuery"),
         }
     }
 }
@@ -222,4 +228,28 @@ pub struct MultiHitHitsQuery {
     pub min_hits: u8,
     pub max_hits: u8,
     pub num_hits: u8,
+}
+
+pub struct FinalDamageQuery {
+    pub damage: u32,
+    pub move_context: Option<MoveContext>,
+    pub target_trainer: Option<bool>,
+}
+
+impl FinalDamageQuery {
+    pub fn from_move(damage: u32, move_context: MoveContext) -> Self {
+        Self {
+            damage,
+            move_context: Some(move_context),
+            target_trainer: None,
+        }
+    }
+
+    pub fn from_non_move(damage: u32, target_trainer: bool) -> Self {
+        Self {
+            damage,
+            move_context: None,
+            target_trainer: Some(target_trainer),
+        }
+    }
 }

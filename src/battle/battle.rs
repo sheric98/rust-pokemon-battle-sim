@@ -81,10 +81,14 @@ impl Battle {
     }
 
     fn process_actions(&mut self, action1: Action, action2: Action) -> BattleRequest {
-        self.event_bus
-            .publish(&Event::BeginTurn, &mut self.battle_state);
-        let action1_first = self.resolve_action_order(&action1, &action2);
         let mut turn_state = TurnState::new();
+        self.event_bus.publish(
+            &Event::BeginTurn,
+            &mut self.battle_state,
+            &mut self.query_bus,
+            &mut turn_state,
+        );
+        let action1_first = self.resolve_action_order(&action1, &action2);
 
         if action1_first {
             self.process_action(true, &action1, &mut turn_state);
@@ -101,7 +105,11 @@ impl Battle {
         }
 
         BattleEngine::queue_after_turn_effects(&mut self.battle_context(), &mut turn_state);
-        self.event_bus.drain_event_queue(&mut self.battle_state);
+        self.event_bus.drain_event_queue(
+            &mut self.battle_state,
+            &mut self.query_bus,
+            &mut turn_state,
+        );
 
         self.generate_battle_request_from_turn_state(&turn_state)
     }
@@ -127,7 +135,8 @@ impl Battle {
             BattleEngine::try_use_move(&mut self.battle_context(), &move_context, turn_state);
         }
 
-        self.event_bus.drain_event_queue(&mut self.battle_state);
+        self.event_bus
+            .drain_event_queue(&mut self.battle_state, &mut self.query_bus, turn_state);
         ActionResponse::Continue
     }
 

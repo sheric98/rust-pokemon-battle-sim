@@ -27,7 +27,7 @@ use crate::{
     query::{
         payload::PayloadMoveQuery,
         query::{
-            CanApplyStatusQuery, CanApplyVolatileStatusQuery, MultiHitHitsQuery,
+            CanApplyStatusQuery, CanApplyVolatileStatusQuery, FinalDamageQuery, MultiHitHitsQuery,
             MultiHitRangeQuery, OnStatQuery, Query, TryUseMoveQuery,
         },
         query_bus::QueryBus,
@@ -110,39 +110,92 @@ impl BattleEngine {
         turn_state: &mut TurnState,
     ) {
         let damage = BattleEngine::calculate_damage(battle_context, move_context);
-        BattleEngine::deal_damage(battle_context, move_context, turn_state, damage);
+        BattleEngine::deal_damage(battle_context, Some(move_context), None, turn_state, damage);
+    }
+
+    pub fn deal_damage_and_heal(
+        battle_context: &mut BattleContext,
+        target_damage_trainer: bool,
+        target_heal_trainer: bool,
+        damage: u32,
+        turn_state: &mut TurnState,
+    ) {
+        let damage_dealt = Self::deal_damage(
+            battle_context,
+            None,
+            Some(target_damage_trainer),
+            turn_state,
+            damage,
+        );
+        Self::heal(
+            battle_context,
+            target_heal_trainer,
+            damage_dealt,
+            turn_state,
+        );
+    }
+
+    pub fn heal(
+        battle_context: &mut BattleContext,
+        target_trainer: bool,
+        heal_amt: u32,
+        turn_state: &mut TurnState,
+    ) {
+        battle_context
+            .battle_state
+            .get_side_mut(target_trainer)
+            .heal(heal_amt);
     }
 
     pub fn deal_damage(
         battle_context: &mut BattleContext,
-        move_context: &MoveContext,
+        move_context: Option<&MoveContext>,
+        target_trainer: Option<bool>,
         turn_state: &mut TurnState,
         damage: u32,
-    ) {
-        let mut final_damage_query =
-            Query::FinalDamage(PayloadMoveQuery::u32_with_default(*move_context, damage));
+    ) -> u32 {
+        if move_context.is_none() || target_trainer.is_none() {
+            panic!("Move context and target trainer must be provided to deal damage");
+        }
+
+        let mut final_damage_query = if move_context.is_some() {
+            Query::FinalDamage(FinalDamageQuery::from_move(damage, *move_context.unwrap()))
+        } else {
+            Query::FinalDamage(FinalDamageQuery::from_non_move(
+                damage,
+                target_trainer.unwrap(),
+            ))
+        };
         battle_context
             .query_bus
             .query(&mut final_damage_query, battle_context.battle_state);
 
-        let final_damage = final_damage_query.into_payload_move_query().get_u32();
-        let caused_faint = battle_context
+        let target = if move_context.is_some() {
+            move_context.unwrap().target_trainer
+        } else {
+            target_trainer.unwrap()
+        };
+
+        let final_damage = final_damage_query.into_final_damage_query().damage;
+        let (caused_faint, damage_dealt) = battle_context
             .battle_state
-            .get_side_mut(move_context.target_trainer)
+            .get_side_mut(target)
             .take_damage(final_damage);
 
         if caused_faint {
             let faint_event = Event::Faint(FaintEvent {
-                move_context: Some(*move_context),
-                trainer_side: move_context.target_trainer,
+                move_context: move_context.copied(),
+                trainer_side: target,
             });
             battle_context.event_queue.add_event(faint_event);
             battle_context
                 .battle_state
-                .get_active_pokemon_mut(move_context.target_trainer)
+                .get_active_pokemon_mut(target)
                 .set_fainted();
-            turn_state.record_faint(move_context.target_trainer);
+            turn_state.record_faint(target);
         }
+
+        damage_dealt
     }
 
     fn apply_status_move(battle_context: &mut BattleContext, move_context: &MoveContext) {

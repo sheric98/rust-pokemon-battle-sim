@@ -109,15 +109,24 @@ impl SingleSideState {
     }
 
     // Returns true if the active Pokemon fainted
-    pub fn take_damage(&mut self, damage: u32) -> bool {
+    //  also returns damage dealt
+    pub fn take_damage(&mut self, damage: u32) -> (bool, u32) {
         let active_pokemon = self.get_active_pokemon_mut();
         if damage >= active_pokemon.pokemon.hp as u32 {
+            let damage_dealt = active_pokemon.pokemon.hp as u32;
             active_pokemon.pokemon.hp = 0;
-            true
+            (true, damage_dealt)
         } else {
             active_pokemon.pokemon.hp -= damage as u16;
-            false
+            (false, damage)
         }
+    }
+
+    pub fn heal(&mut self, heal_amt: u32) {
+        let active_pokemon = self.get_active_pokemon_mut();
+        let new_hp =
+            (active_pokemon.pokemon.hp + heal_amt as u16).min(active_pokemon.pokemon.max_hp);
+        active_pokemon.pokemon.hp = new_hp;
     }
 
     pub fn out_of_usable_pokemon(&self) -> bool {
