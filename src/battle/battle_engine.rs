@@ -355,8 +355,11 @@ impl BattleEngine {
         move_context: &MoveContext,
         volatile_status: VolatileStatus,
     ) {
+        // FIXME: Always assumes target trainer is target of status currently
+        let target = move_context.target_trainer;
+
         let mut can_apply_volatile_status_query = Query::CanApplyVolatileStatus(
-            CanApplyVolatileStatusQuery::new(*move_context, volatile_status),
+            CanApplyVolatileStatusQuery::new(*move_context, target, volatile_status),
         );
         battle_context.query_bus.query(
             &mut can_apply_volatile_status_query,
@@ -371,7 +374,7 @@ impl BattleEngine {
 
         let volatile_status_handler = battle_context
             .battle_state
-            .get_active_pokemon_mut(move_context.target_trainer)
+            .get_active_pokemon_mut(target)
             .add_volatile_status(volatile_status);
 
         BattleEngine::register_handler(
@@ -400,8 +403,14 @@ impl BattleEngine {
         move_context: &MoveContext,
         status: Status,
     ) {
-        let mut can_apply_status_query =
-            Query::CanApplyStatus(CanApplyStatusQuery::new(*move_context, status));
+        // FIXME: Always assumes that the target trainer is target of status.
+        let status_target = move_context.target_trainer;
+
+        let mut can_apply_status_query = Query::CanApplyStatus(CanApplyStatusQuery::new(
+            *move_context,
+            status_target,
+            status,
+        ));
         battle_context
             .query_bus
             .query(&mut can_apply_status_query, battle_context.battle_state);
@@ -414,7 +423,7 @@ impl BattleEngine {
 
         if battle_context
             .battle_state
-            .get_active_pokemon(move_context.target_trainer)
+            .get_active_pokemon(status_target)
             .status
             != None
         {
@@ -438,12 +447,12 @@ impl BattleEngine {
 
         battle_context
             .battle_state
-            .get_active_pokemon_mut(move_context.target_trainer)
+            .get_active_pokemon_mut(status_target)
             .set_status(status);
 
         let new_status_handler = &battle_context
             .battle_state
-            .get_active_pokemon(move_context.target_trainer)
+            .get_active_pokemon(status_target)
             .status_handler;
         match new_status_handler {
             Some(handler) => {
@@ -542,19 +551,25 @@ impl BattleEngine {
         battle_context
             .query_bus
             .query(&mut mod1_query, battle_context.battle_state);
-        let mod1 = mod1_query.into_payload_move_query().as_combined_modifier();
+        let mod1 = mod1_query
+            .into_payload_move_query()
+            .as_combined_modifier_default(1);
 
         let mut mod2_query = Query::OnMod2(PayloadMoveQuery::vec_f32(*move_context));
         battle_context
             .query_bus
             .query(&mut mod2_query, battle_context.battle_state);
-        let mod2 = mod2_query.into_payload_move_query().as_combined_modifier();
+        let mod2 = mod2_query
+            .into_payload_move_query()
+            .as_combined_modifier_default(1);
 
         let mut mod3_query = Query::OnMod3(PayloadMoveQuery::vec_f32(*move_context));
         battle_context
             .query_bus
             .query(&mut mod3_query, battle_context.battle_state);
-        let mod3 = mod3_query.into_payload_move_query().as_combined_modifier();
+        let mod3 = mod3_query
+            .into_payload_move_query()
+            .as_combined_modifier_default(1);
 
         let mut is_crit_query = Query::IsCrit(PayloadMoveQuery::bool(*move_context));
         battle_context
@@ -565,7 +580,8 @@ impl BattleEngine {
         let crit_mult: f32 = if !is_crit {
             1.0
         } else {
-            let mut crit_mult_query = Query::CritMult(PayloadMoveQuery::f32(*move_context));
+            let mut crit_mult_query =
+                Query::CritMult(PayloadMoveQuery::f32_with_default(*move_context, 1.5));
             battle_context
                 .query_bus
                 .query(&mut crit_mult_query, battle_context.battle_state);
@@ -573,14 +589,19 @@ impl BattleEngine {
         };
 
         let r = (100 - battle_context.battle_state.get_rand_num(16));
-        let mut stab_mult_query =
-            Query::StabMult(PayloadMoveQuery::f32_with_default(*move_context, 1.0));
-        battle_context
-            .query_bus
-            .query(&mut stab_mult_query, battle_context.battle_state);
-        let stab_mult = stab_mult_query.into_payload_move_query().get_f32();
 
-        let move_type = move_dex::get_move_data(&move_context.move_name).move_type;
+        let stab_mult: f32 = if !Self::is_stab(battle_context, move_context) {
+            1.0
+        } else {
+            let mut stab_mult_query =
+                Query::StabMult(PayloadMoveQuery::f32_with_default(*move_context, 1.5));
+            battle_context
+                .query_bus
+                .query(&mut stab_mult_query, battle_context.battle_state);
+            stab_mult_query.into_payload_move_query().get_f32()
+        };
+
+        let move_type = move_context.pokemove.move_type;
         let (type1_mult, type2_mult) = match battle_context
             .battle_state
             .get_active_pokemon(move_context.target_trainer)
@@ -614,6 +635,38 @@ impl BattleEngine {
             type1_mult,
             type2_mult,
         )
+    }
+
+    fn is_stab(battle_context: &mut BattleContext, move_context: &MoveContext) -> bool {
+        let pokemon = &battle_context
+            .battle_state
+            .get_active_pokemon(move_context.src_trainer)
+            .pokemon;
+        let move_type = move_context.pokemove.move_type;
+
+        match pokemon.typing {
+            PokemonTyping::DualType(a, b) => a == move_type || b == move_type,
+            PokemonTyping::MonoType(a) => a == move_type,
+        }
+    }
+
+    fn get_default_immunity(
+        battle_context: &mut BattleContext,
+        move_context: &MoveContext,
+    ) -> bool {
+        let pokemon = &battle_context
+            .battle_state
+            .get_active_pokemon(move_context.target_trainer)
+            .pokemon;
+        let move_type = move_context.pokemove.move_type;
+
+        match pokemon.typing {
+            PokemonTyping::DualType(a, b) => {
+                effectiveness::type_immunity(move_type, a)
+                    || effectiveness::type_immunity(move_type, b)
+            }
+            PokemonTyping::MonoType(a) => effectiveness::type_immunity(move_type, a),
+        }
     }
 
     pub fn resolve_speed_order(battle_context: &mut BattleContext) -> bool {
@@ -655,8 +708,10 @@ impl BattleEngine {
             return false;
         }
 
-        let mut immunity_query =
-            Query::CheckImmunity(PayloadMoveQuery::bool_with_default(*move_context, true));
+        let mut immunity_query = Query::CheckImmunity(PayloadMoveQuery::bool_with_default(
+            *move_context,
+            !Self::get_default_immunity(battle_context, move_context),
+        ));
         battle_context
             .query_bus
             .query(&mut immunity_query, battle_context.battle_state);
@@ -672,9 +727,14 @@ impl BattleEngine {
             return true;
         }
 
-        let mut get_move_hit_chance_query = Query::GetMoveHitChance(
-            PayloadMoveQuery::vec_f32_with_default(*move_context, vec![]),
-        );
+        let mut get_move_hit_chance_query =
+            Query::GetMoveHitChance(PayloadMoveQuery::vec_f32_with_default(
+                *move_context,
+                vec![
+                    move_context.pokemove.accuracy.unwrap() as f32,
+                    Self::get_accuracy_mutliplier(battle_context, move_context),
+                ],
+            ));
         battle_context
             .query_bus
             .query(&mut get_move_hit_chance_query, battle_context.battle_state);
@@ -772,6 +832,41 @@ impl BattleEngine {
             .query(&mut stat_query, battle_context.battle_state);
         let stat_payload = stat_query.into_on_stat_query();
         damage_utils::rounded_damage_from_modifiers(&stat_payload.mults)
+    }
+
+    fn get_accuracy_mutliplier(
+        battle_context: &mut BattleContext,
+        move_context: &MoveContext,
+    ) -> f32 {
+        let src_accuracy_stage = battle_context
+            .battle_state
+            .get_active_pokemon(move_context.src_trainer)
+            .boosts[BoostableStat::Accuracy];
+        let target_evasion_stage = battle_context
+            .battle_state
+            .get_active_pokemon(move_context.target_trainer)
+            .boosts[BoostableStat::Evasion];
+
+        let overall_accuracy_stage = (src_accuracy_stage - target_evasion_stage).clamp(-6, 6);
+
+        let percent: u16 = match overall_accuracy_stage {
+            -6 => 33,
+            -5 => 36,
+            -4 => 43,
+            -3 => 50,
+            -2 => 60,
+            -1 => 75,
+            0 => 100,
+            1 => 133,
+            2 => 166,
+            3 => 200,
+            4 => 233,
+            5 => 266,
+            6 => 300,
+            _ => panic!("Should not have any other stage after clamp"),
+        };
+
+        percent as f32 / 100.0
     }
 
     fn get_stat_boost_to_multiplier(boost: i8) -> f32 {

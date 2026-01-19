@@ -187,14 +187,16 @@ pub struct OnStatQuery {
 
 pub struct CanApplyStatusQuery {
     pub move_context: MoveContext,
+    pub target: bool,
     pub status: Status,
     pub can_apply: bool,
 }
 
 impl CanApplyStatusQuery {
-    pub fn new(move_context: MoveContext, status: Status) -> Self {
+    pub fn new(move_context: MoveContext, target: bool, status: Status) -> Self {
         Self {
             move_context,
+            target,
             status,
             can_apply: true,
         }
@@ -203,14 +205,16 @@ impl CanApplyStatusQuery {
 
 pub struct CanApplyVolatileStatusQuery {
     pub move_context: MoveContext,
+    pub target: bool,
     pub volatile_status: VolatileStatus,
     pub can_apply: bool,
 }
 
 impl CanApplyVolatileStatusQuery {
-    pub fn new(move_context: MoveContext, volatile_status: VolatileStatus) -> Self {
+    pub fn new(move_context: MoveContext, target: bool, volatile_status: VolatileStatus) -> Self {
         Self {
             move_context,
+            target,
             volatile_status,
             can_apply: true,
         }

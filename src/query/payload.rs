@@ -344,4 +344,11 @@ impl PayloadMoveQuery {
     pub fn as_combined_modifier(&self) -> u32 {
         damage_utils::rounded_damage_from_modifiers(self.payload.as_vec_f32())
     }
+
+    pub fn as_combined_modifier_default(&self, default: u32) -> u32 {
+        damage_utils::rounded_damage_from_modifiers_with_default(
+            self.payload.as_vec_f32(),
+            Some(default),
+        )
+    }
 }

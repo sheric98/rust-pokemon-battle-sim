@@ -16,6 +16,8 @@ impl Subscriber<Query> for StaticBattleHandler {
             QueryKind::OnPriority,
             QueryKind::OnBasePower,
             QueryKind::MultiHitHits,
+            QueryKind::CanApplyStatus,
+            QueryKind::CanApplyVolatileStatus,
         ]
     }
 
@@ -24,6 +26,8 @@ impl Subscriber<Query> for StaticBattleHandler {
             QueryKind::OnBasePower => 0,
             QueryKind::OnPriority => 0,
             QueryKind::MultiHitHits => 0,
+            QueryKind::CanApplyStatus => 0,
+            QueryKind::CanApplyVolatileStatus => 0,
             _ => panic!("Query priority in move handler for unhandled query"),
         }
     }
@@ -50,6 +54,18 @@ impl QueryHandler for StaticBattleHandler {
             Query::MultiHitHits(payload) => {
                 payload.num_hits =
                     battle_state.get_rand_num_inclusive(payload.min_hits, payload.max_hits);
+            }
+            Query::CanApplyStatus(payload) => {
+                payload.can_apply = battle_state
+                    .get_active_pokemon(payload.target)
+                    .status
+                    .is_some();
+            }
+            Query::CanApplyVolatileStatus(payload) => {
+                payload.can_apply = !battle_state
+                    .get_active_pokemon(payload.target)
+                    .volatile_statuses
+                    .contains_key(&payload.volatile_status);
             }
             _ => panic!("unhandled query for move handler"),
         }

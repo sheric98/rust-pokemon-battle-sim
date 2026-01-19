@@ -1,6 +1,13 @@
-pub fn rounded_damage_from_modifiers(modifiers: &Vec<f32>) -> u32 {
+pub fn rounded_damage_from_modifiers_with_default(
+    modifiers: &Vec<f32>,
+    default: Option<u32>,
+) -> u32 {
     if modifiers.is_empty() {
-        panic!("No modifiers provided");
+        if default.is_none() {
+            panic!("No modifiers provided")
+        } else {
+            return default.unwrap();
+        }
     }
 
     if modifiers.len() == 1 {
@@ -14,6 +21,10 @@ pub fn rounded_damage_from_modifiers(modifiers: &Vec<f32>) -> u32 {
     }
 
     modifier.floor() as u32
+}
+
+pub fn rounded_damage_from_modifiers(modifiers: &Vec<f32>) -> u32 {
+    rounded_damage_from_modifiers_with_default(modifiers, None)
 }
 
 pub fn get_damage_for_move(
