@@ -83,7 +83,12 @@ impl BattleEngine {
                     Self::apply_status_move(battle_context, move_context);
                 }
                 MoveCategory::Physical | MoveCategory::Special => {
-                    BattleEngine::single_hit_execution(battle_context, move_context, turn_state);
+                    let damage_dealt = BattleEngine::single_hit_execution(
+                        battle_context,
+                        move_context,
+                        turn_state,
+                    );
+                    Self::apply_recoil(battle_context, move_context, damage_dealt, turn_state);
                     Self::apply_secondary_effect(battle_context, move_context);
                 }
             };
@@ -102,17 +107,19 @@ impl BattleEngine {
             }
         }
 
-        Self::deduct_pp(battle_context, move_context);
+        if move_context.move_name != MoveName::Struggle {
+            Self::deduct_pp(battle_context, move_context);
+        }
     }
 
-    // returns true if target fainted
+    // returns damage dealt
     fn single_hit_execution(
         battle_context: &mut BattleContext,
         move_context: &MoveContext,
         turn_state: &mut TurnState,
-    ) {
+    ) -> u32 {
         let damage = BattleEngine::calculate_damage(battle_context, move_context);
-        BattleEngine::deal_damage(battle_context, Some(move_context), None, turn_state, damage);
+        BattleEngine::deal_damage(battle_context, Some(move_context), None, turn_state, damage)
     }
 
     fn deduct_pp(battle_context: &mut BattleContext, move_context: &MoveContext) {
@@ -163,6 +170,7 @@ impl BattleEngine {
             .heal(heal_amt);
     }
 
+    // returns damage dealt
     pub fn deal_damage(
         battle_context: &mut BattleContext,
         move_context: Option<&MoveContext>,
@@ -292,6 +300,42 @@ impl BattleEngine {
                 }
             }
         });
+    }
+
+    fn apply_recoil(
+        battle_context: &mut BattleContext,
+        move_context: &MoveContext,
+        damage_dealt: u32,
+        turn_state: &mut TurnState,
+    ) {
+        if move_context.move_name == MoveName::Struggle {
+            let recoil_damage = battle_context
+                .battle_state
+                .get_active_pokemon(move_context.src_trainer)
+                .pokemon
+                .max_hp
+                / 4;
+
+            Self::deal_damage(
+                battle_context,
+                None,
+                Some(move_context.src_trainer),
+                turn_state,
+                recoil_damage as u32,
+            );
+        } else if move_context.pokemove.recoil.is_some() {
+            let percent = move_context.pokemove.recoil.unwrap();
+            let base_recoil_damage = (damage_dealt * percent as u32) / 100;
+
+            // TODO: account for abilities that affect recoil damage
+            Self::deal_damage(
+                battle_context,
+                None,
+                Some(move_context.src_trainer),
+                turn_state,
+                base_recoil_damage,
+            );
+        }
     }
 
     fn apply_boost(

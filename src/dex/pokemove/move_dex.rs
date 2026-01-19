@@ -14,6 +14,14 @@ use crate::core::{
 
 static MOVES_DB: LazyLock<EnumMap<MoveName, PokeMove>> = LazyLock::new(|| {
     enum_map! {
+        MoveName::Struggle =>
+            PokeMove::builder()
+                .name(MoveName::Struggle)
+                .category(MoveCategory::Physical)
+                .power(Some(50))
+                .move_type(PokeType::Typeless)
+                .pp(1)
+                .build(),
         MoveName::Bite =>
             PokeMove::builder()
                 .name(MoveName::Bite)

@@ -30,6 +30,8 @@ pub struct PokeMove {
     pub pp: u8,
     #[builder(default = false)]
     pub is_multi_hit: bool,
+    #[builder(default)]
+    pub recoil: Option<u8>,
 
     #[builder(default)]
     pub secondary_effects: Option<Vec<(u8, Vec<SecondaryEffect>)>>,

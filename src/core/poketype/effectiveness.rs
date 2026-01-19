@@ -68,5 +68,6 @@ const TYPE_CHART: [[u8; 17]; 17] = [
 
 #[inline]
 pub fn type_effectiveness(attack: PokeType, defense: PokeType) -> f32 {
-    TYPE_CHART[attack.idx()][defense.idx()] as f32 / 10.0
+    // Subtract 1 for Typeless type
+    TYPE_CHART[attack.idx() - 1][defense.idx() - 1] as f32 / 10.0
 }
