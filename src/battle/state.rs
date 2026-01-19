@@ -1,5 +1,9 @@
 use crate::{
-    battle::{actions::Action, pokemon_battle_instance::PokemonBattleInstance},
+    battle::{
+        actions::Action,
+        pokemon_battle_instance::PokemonBattleInstance,
+        valid_actions::{ValidActions, ValidMoves, ValidSwitches},
+    },
     core::{pokemon::pokemon::Pokemon, pokemove::move_name::MoveName},
 };
 use rand::{Rng, SeedableRng, rngs::StdRng};
@@ -131,5 +135,50 @@ impl SingleSideState {
 
     pub fn out_of_usable_pokemon(&self) -> bool {
         self.pokemon.iter().all(|p| p.is_fainted())
+    }
+
+    pub fn get_valid_moves(&self) -> ValidMoves {
+        let pp_arr = self.get_active_pokemon().pp;
+        let move_names = self.get_active_pokemon().pokemon.moves;
+
+        let mut valid: Vec<usize> = Vec::new();
+        for (i, (pp_val, move_name)) in pp_arr.iter().zip(move_names.iter()).enumerate() {
+            if *move_name != MoveName::Empty && *pp_val > 0 {
+                valid.push(i);
+            }
+        }
+
+        if valid.is_empty() {
+            ValidMoves::Struggle
+        } else {
+            ValidMoves::Moves(valid)
+        }
+    }
+
+    // Doesn't account for abilities preventing switches
+    pub fn get_valid_switches(&self) -> Option<ValidSwitches> {
+        let mut valid: Vec<usize> = Vec::new();
+
+        for (i, pokemon) in self.pokemon.iter().enumerate() {
+            if i != self.active_pokemon_idx && !pokemon.is_fainted() {
+                valid.push(i);
+            }
+        }
+
+        if valid.is_empty() {
+            None
+        } else {
+            Some(ValidSwitches { switches: valid })
+        }
+    }
+
+    pub fn get_valid_actions(&self) -> ValidActions {
+        let valid_moves = self.get_valid_moves();
+        let valid_switches = self.get_valid_switches();
+
+        ValidActions {
+            valid_moves,
+            valid_switches,
+        }
     }
 }

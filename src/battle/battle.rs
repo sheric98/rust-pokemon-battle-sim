@@ -7,7 +7,7 @@ use crate::{
         battle_context::BattleContext,
         battle_engine::BattleEngine,
         battle_input::{BattleInput, SingleInput},
-        battle_request::{ActionResponse, BattleRequest, SingleBattleRequest},
+        battle_request::{ActionResponse, BattleRequest, SingleBattleRequest, Winner},
         state::BattleState,
         static_battle_handler::StaticBattleHandler,
         turn_state::TurnState,
@@ -202,44 +202,67 @@ impl Battle {
     fn generate_battle_request_from_turn_state(&self, turn_state: &TurnState) -> BattleRequest {
         match turn_state.fainted_sides.as_slice() {
             [] => BattleRequest::Request(
-                Some(SingleBattleRequest::ActionRequest),
-                Some(SingleBattleRequest::ActionRequest),
+                Some(SingleBattleRequest::ActionRequest(
+                    self.battle_state.get_side(true).get_valid_actions(),
+                )),
+                Some(SingleBattleRequest::ActionRequest(
+                    self.battle_state.get_side(false).get_valid_actions(),
+                )),
             ),
             [true] => {
                 if self.battle_state.get_side(true).out_of_usable_pokemon() {
-                    BattleRequest::BattleEnded(true)
+                    BattleRequest::BattleEnded(Winner::Trainer2)
                 } else {
-                    BattleRequest::Request(Some(SingleBattleRequest::SwitchInRequest), None)
+                    BattleRequest::Request(
+                        Some(SingleBattleRequest::SwitchInRequest(
+                            self.battle_state
+                                .get_side(true)
+                                .get_valid_switches()
+                                .expect("Switch In request should have valid switches"),
+                        )),
+                        None,
+                    )
                 }
             }
             [false] => {
                 if self.battle_state.get_side(false).out_of_usable_pokemon() {
-                    BattleRequest::BattleEnded(false)
-                } else {
-                    BattleRequest::Request(None, Some(SingleBattleRequest::SwitchInRequest))
-                }
-            }
-            [true, false] => {
-                if self.battle_state.get_side(true).out_of_usable_pokemon() {
-                    BattleRequest::BattleEnded(true)
-                } else if self.battle_state.get_side(false).out_of_usable_pokemon() {
-                    BattleRequest::BattleEnded(false)
+                    BattleRequest::BattleEnded(Winner::Trainer1)
                 } else {
                     BattleRequest::Request(
-                        Some(SingleBattleRequest::SwitchInRequest),
-                        Some(SingleBattleRequest::SwitchInRequest),
+                        None,
+                        Some(SingleBattleRequest::SwitchInRequest(
+                            self.battle_state
+                                .get_side(false)
+                                .get_valid_switches()
+                                .expect("Switch In request should have valid switches"),
+                        )),
                     )
                 }
             }
-            [false, true] => {
-                if self.battle_state.get_side(false).out_of_usable_pokemon() {
-                    BattleRequest::BattleEnded(false)
-                } else if self.battle_state.get_side(true).out_of_usable_pokemon() {
-                    BattleRequest::BattleEnded(true)
+            [true, false] | [false, true] => {
+                let side1_lost = self.battle_state.get_side(true).out_of_usable_pokemon();
+                let side2_lost = self.battle_state.get_side(false).out_of_usable_pokemon();
+
+                if side1_lost && side2_lost {
+                    BattleRequest::BattleEnded(Winner::Draw)
+                } else if side1_lost {
+                    BattleRequest::BattleEnded(Winner::Trainer2)
+                } else if side2_lost {
+                    BattleRequest::BattleEnded(Winner::Trainer1)
                 } else {
                     BattleRequest::Request(
-                        Some(SingleBattleRequest::SwitchInRequest),
-                        Some(SingleBattleRequest::SwitchInRequest),
+                        Some(SingleBattleRequest::SwitchInRequest(
+                            self.battle_state
+                                .get_side(true)
+                                .get_valid_switches()
+                                .expect("Switch In request should have valid switches"),
+                        )),
+                        Some(SingleBattleRequest::SwitchInRequest(
+                            self.battle_state
+                                .get_side(false)
+                                .get_valid_switches()
+                                .expect("Switch In request should have valid switches"),
+                        )),
                     )
                 }
             }
