@@ -16,9 +16,11 @@ pub enum SwitchSlot {
     Slot5,
 }
 
+#[derive(PartialEq, Eq)]
 pub enum Action {
     Move(MoveSlot),
     Switch(SwitchSlot),
+    Struggle,
 }
 
 impl Action {

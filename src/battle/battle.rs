@@ -127,9 +127,12 @@ impl Battle {
                 action.get_switch_index(),
             );
         } else {
-            let move_name = self
-                .battle_state
-                .get_move_for_move_action(is_trainer_1, &action);
+            let move_name = if *action == Action::Struggle {
+                MoveName::Struggle
+            } else {
+                self.battle_state
+                    .get_move_for_move_action(is_trainer_1, action)
+            };
             let move_context = Battle::create_move_context(move_name, is_trainer_1);
 
             BattleEngine::try_use_move(&mut self.battle_context(), &move_context, turn_state);
