@@ -35,7 +35,7 @@ pub struct Battle {
 }
 
 impl Battle {
-    pub fn new() -> Self {
+    pub fn new(trainer_1_mons: Vec<Pokemon>, trainer_2_mons: Vec<Pokemon>) -> Self {
         let mut event_bus = EventBus::new();
         let mut query_bus = QueryBus::new();
 
@@ -45,10 +45,18 @@ impl Battle {
             .add_handler(Arc::new(StaticBattleHandler));
 
         Self {
-            battle_state: BattleState::new(),
+            battle_state: BattleState::new(trainer_1_mons, trainer_2_mons),
             event_bus,
             query_bus,
         }
+    }
+
+    pub fn init_and_start(trainer_1_mons: Vec<Pokemon>, trainer_2_mons: Vec<Pokemon>) -> Self {
+        let mut battle = Self::new(trainer_1_mons, trainer_2_mons);
+
+        battle.start_battle();
+
+        battle
     }
 
     pub fn start_battle(&mut self) {

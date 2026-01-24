@@ -11,27 +11,27 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Serialize)]
 pub struct BattleState {
-    trainer_1_state: Option<SingleSideState>,
-    trainer_2_state: Option<SingleSideState>,
+    trainer_1_state: SingleSideState,
+    trainer_2_state: SingleSideState,
 
     #[serde(skip)]
     rng: StdRng,
 }
 
 impl BattleState {
-    pub fn new() -> Self {
+    pub fn new(trainer_1_mons: Vec<Pokemon>, trainer_2_mons: Vec<Pokemon>) -> Self {
         Self {
-            trainer_1_state: None,
-            trainer_2_state: None,
+            trainer_1_state: SingleSideState::new(trainer_1_mons, true),
+            trainer_2_state: SingleSideState::new(trainer_2_mons, false),
             rng: StdRng::from_entropy(),
         }
     }
 
     pub fn get_side_mut(&mut self, trainer_1: bool) -> &mut SingleSideState {
         if trainer_1 {
-            self.trainer_1_state.as_mut().unwrap()
+            &mut self.trainer_1_state
         } else {
-            self.trainer_2_state.as_mut().unwrap()
+            &mut self.trainer_2_state
         }
     }
 
@@ -60,9 +60,9 @@ impl BattleState {
 
     pub fn get_side(&self, trainer_1: bool) -> &SingleSideState {
         if trainer_1 {
-            self.trainer_1_state.as_ref().unwrap()
+            &self.trainer_1_state
         } else {
-            self.trainer_2_state.as_ref().unwrap()
+            &self.trainer_2_state
         }
     }
 
